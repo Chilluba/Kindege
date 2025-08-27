@@ -26,6 +26,7 @@ import GameScreen from './components/GameScreen';
 import Controls from './components/Controls';
 import Introduction from './components/Introduction';
 import useSound from './hooks/useSound';
+import useVibration from './hooks/useVibration';
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
@@ -71,7 +72,16 @@ const App: React.FC = () => {
     stopDrainSound,
   } = useSound();
 
+  const {
+    playCrashVibration,
+    playWarningVibration,
+    playCashOutVibration,
+    playBetPlacedVibration,
+    playQuickBetVibration,
+  } = useVibration();
+
   const gameLoopRef = useRef<number | null>(null);
+  const wasWarningRef = useRef<boolean>(false);
   
   useEffect(() => {
     if (animationText) {
@@ -184,9 +194,10 @@ const App: React.FC = () => {
       setBalance(prev => prev + winnings);
       setHasCashedOut(true);
       playDing();
+      playCashOutVibration();
       setAnimationText({ key: Date.now(), amount: winnings, type: 'win' });
     }
-  }, [gameState, hasCashedOut, effectiveMultiplier, betAmount, playDing]);
+  }, [gameState, hasCashedOut, effectiveMultiplier, betAmount, playDing, playCashOutVibration]);
 
 
   const endRound = useCallback(() => {
@@ -196,6 +207,7 @@ const App: React.FC = () => {
     }
     
     playExplosion();
+    playCrashVibration();
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 500); // Match animation duration
 
@@ -218,7 +230,7 @@ const App: React.FC = () => {
         setGameState(GameState.BETTING);
     }, POST_ROUND_DELAY_MS);
 
-  }, [crashMultiplier, playExplosion, hasCashedOut, betAmount]);
+  }, [crashMultiplier, playExplosion, hasCashedOut, betAmount, playCrashVibration]);
 
 
   const startRound = useCallback(() => {
@@ -229,6 +241,7 @@ const App: React.FC = () => {
     setMultiplier(1.00);
     setEffectiveMultiplier(1.00);
     setHasCashedOut(false);
+    wasWarningRef.current = false; // Reset warning state for new round
 
     const newCrashMultiplier = generateCrashPoint(safeZone, difficultyFactor);
     setCrashMultiplier(newCrashMultiplier);
@@ -269,6 +282,12 @@ const App: React.FC = () => {
 
         const warningThreshold = safeZone ? 0.99 : 0.95;
         const isWarning = normalizedProgress > warningThreshold;
+        
+        // Trigger vibration only when warning state begins
+        if (isWarning && !wasWarningRef.current) {
+            playWarningVibration();
+        }
+        wasWarningRef.current = isWarning;
 
         setFlightDynamics({ planeY, shadowY, proximity, isWarning });
         setEffectiveMultiplier(newEffectiveMultiplier);
@@ -277,7 +296,7 @@ const App: React.FC = () => {
         return nextMultiplier;
       });
     }, GAME_LOOP_INTERVAL_MS);
-  }, [generateCrashPoint, playTakeoff, endRound, difficultyFactor, updateDrainSound]);
+  }, [generateCrashPoint, playTakeoff, endRound, difficultyFactor, updateDrainSound, playWarningVibration]);
 
 
   useEffect(() => {
@@ -326,6 +345,7 @@ const App: React.FC = () => {
       setGameState(GameState.COUNTDOWN);
       setCountdown(COUNTDOWN_SECONDS);
       playBetPlaced();
+      playBetPlacedVibration();
     } else {
       // This is a fallback and should not be reached due to clamping.
       alert("Insufficient balance!");
@@ -412,6 +432,7 @@ const App: React.FC = () => {
               hasCashedOut={hasCashedOut}
               difficultyFactor={difficultyFactor}
               playQuickBet={playQuickBet}
+              playQuickBetVibration={playQuickBetVibration}
               animationText={animationText}
             />
           </div>

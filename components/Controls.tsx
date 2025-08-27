@@ -19,6 +19,7 @@ interface ControlsProps {
   handlePlaceBet: () => void;
   handleCashOut: () => void;
   playQuickBet: () => void;
+  playQuickBetVibration: () => void;
 }
 
 interface FlyingCoinData {
@@ -93,6 +94,7 @@ const Controls: React.FC<ControlsProps> = ({
   handlePlaceBet,
   handleCashOut,
   playQuickBet,
+  playQuickBetVibration,
 }) => {
   const isBettingDisabled = gameState !== GameState.BETTING;
   
@@ -127,6 +129,7 @@ const Controls: React.FC<ControlsProps> = ({
   const quickBet = (amount: number) => {
     if (isBettingDisabled) return;
     playQuickBet();
+    playQuickBetVibration();
     const newBet = Math.min(MAX_BET, betAmount + amount);
     handleBetChange(newBet.toString());
   }
@@ -214,7 +217,7 @@ const Controls: React.FC<ControlsProps> = ({
                 <button onClick={() => quickBet(10)} disabled={isBettingDisabled} className="bet-btn">+10</button>
                 <button onClick={() => quickBet(50)} disabled={isBettingDisabled} className="bet-btn">+50</button>
                 <button onClick={() => quickBet(100)} disabled={isBettingDisabled} className="bet-btn">+100</button>
-                <button onClick={() => { playQuickBet(); handleBetChange(MAX_BET.toString()); }} disabled={isBettingDisabled} className="bet-btn">MAX</button>
+                <button onClick={() => { playQuickBet(); playQuickBetVibration(); handleBetChange(MAX_BET.toString()); }} disabled={isBettingDisabled} className="bet-btn">MAX</button>
             </div>
         </div>
       </div>
