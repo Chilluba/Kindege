@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState } from './types';
-import type { HistoryItem } from './types';
+import type { HistoryItem, CoinAnimationData } from './types';
 import {
   INITIAL_BALANCE,
   MIN_BET,
@@ -14,19 +14,18 @@ import {
   DIFFICULTY_WIN_INCREASE,
   DIFFICULTY_LOSS_DECREASE,
   SAFE_ZONE_CHANCE,
-  THEORETICAL_RTP,
   CRASH_POINT_MAX,
   DRAIN_EXPONENT
 } from './constants';
+import Header from './components/Header';
 import HistoryBar from './components/HistoryBar';
 import GameScreen from './components/GameScreen';
-// Fix: Changed to a named import to match the updated export in Controls.tsx.
 import { Controls } from './components/Controls';
 import Introduction from './components/Introduction';
+import CoinAnimationManager from './components/CoinAnimation';
 import useSound from './hooks/useSound';
 import useVibration from './hooks/useVibration';
 import { useTranslation } from './i18n/useTranslation';
-import LanguageSwitcher from './components/LanguageSwitcher';
 
 const App: React.FC = () => {
   const { t, getMissions } = useTranslation();
@@ -53,7 +52,7 @@ const App: React.FC = () => {
   const [flightDynamics, setFlightDynamics] = useState({ planeY: 0, shadowY: 0, proximity: 0, isWarning: false });
   const [isShaking, setIsShaking] = useState<boolean>(false);
   
-  const [animationText, setAnimationText] = useState<{ key: number; amount: number; type: 'win' | 'loss' } | null>(null);
+  const [coinAnimations, setCoinAnimations] = useState<CoinAnimationData[]>([]);
 
   // Auto-Bet State
   const [isAutoBetActive, setIsAutoBetActive] = useState<boolean>(false);
@@ -90,20 +89,33 @@ const App: React.FC = () => {
   const gameLoopRef = useRef<number | null>(null);
   const wasWarningRef = useRef<boolean>(false);
   const lastMissionIndex = useRef<number | null>(null);
+  const balanceRef = useRef<HTMLDivElement>(null);
+  const actionButtonRef = useRef<HTMLButtonElement>(null);
   
-  useEffect(() => {
-    if (animationText) {
-        const timer = setTimeout(() => {
-            setAnimationText(null);
-        }, 2000); // Corresponds to animation duration
-        return () => clearTimeout(timer);
+  const triggerCoinAnimation = useCallback((type: 'win' | 'loss' | 'bet') => {
+    const startRect = (type === 'win' ? actionButtonRef.current : balanceRef.current)?.getBoundingClientRect();
+    const endRect = (type === 'win' ? balanceRef.current : actionButtonRef.current)?.getBoundingClientRect();
+
+    if (!startRect) return;
+
+    const newAnimation: CoinAnimationData = {
+      id: Date.now() + Math.random(),
+      type,
+      startX: startRect.left + startRect.width / 2,
+      startY: startRect.top + startRect.height / 2,
+    };
+
+    if (endRect && type !== 'loss') {
+      newAnimation.endX = endRect.left + endRect.width / 2;
+      newAnimation.endY = endRect.top + endRect.height / 2;
     }
-  }, [animationText]);
+
+    setCoinAnimations(prev => [...prev, newAnimation]);
+  }, []);
 
   const generateFlightLog = useCallback(() => {
     const predefinedMissions = getMissions();
     setIsGeneratingLog(true);
-    // Simulate a brief loading period to maintain the "AWAITING MISSION BRIEF" feel.
     setTimeout(() => {
       let nextIndex;
       do {
@@ -122,7 +134,6 @@ const App: React.FC = () => {
     }
   }, [gameState, generateFlightLog]);
 
-  // Effect to control continuous plane sounds
   useEffect(() => {
     if (gameState === GameState.IN_PROGRESS) {
       startPlayerPlaneSound();
@@ -133,7 +144,6 @@ const App: React.FC = () => {
       stopShadowPlaneSound();
       stopDrainSound();
     }
-    // Cleanup on unmount
     return () => {
       stopPlayerPlaneSound();
       stopShadowPlaneSound();
@@ -141,50 +151,21 @@ const App: React.FC = () => {
     };
   }, [gameState, startPlayerPlaneSound, stopPlayerPlaneSound, startShadowPlaneSound, stopShadowPlaneSound, startDrainSound, stopDrainSound]);
 
-
   const generateCrashPoint = useCallback((isSafe: boolean, difficulty: number) => {
     if (isSafe) {
-        // Safe zones guarantee a better-than-average outcome (2x-20x), but are still volatile.
-        // Skewed towards the lower end of the range.
         return 2.0 + Math.pow(Math.random(), 2) * 18;
     }
 
     const roll = Math.random();
-    // difficultyFactor (0.8 to 1.5) adjusts the probability curve.
-    // > 1.0 makes lower rolls more likely (harder)
-    // < 1.0 makes higher rolls more likely (easer)
     const effectiveRoll = Math.pow(roll, difficulty);
 
-    // [3% chance] Instant crash
-    if (effectiveRoll < 0.03) {
-        return 1.00;
-    }
-    // [55% chance] The Danger Zone (1.01x - 1.49x)
-    if (effectiveRoll < 0.58) { // 0.03 + 0.55
-        // Skewed heavily towards 1.01x
-        return 1.01 + Math.pow(Math.random(), 2) * 0.48;
-    }
-    // [20% chance] The Safe Bet (1.50x - 1.99x)
-    if (effectiveRoll < 0.78) { // 0.58 + 0.20
-        return 1.50 + Math.random() * 0.49;
-    }
-    // [12% chance] Good Wins (2.00x - 4.99x)
-    if (effectiveRoll < 0.90) { // 0.78 + 0.12
-        return 2.00 + Math.pow(Math.random(), 1.5) * 2.99;
-    }
-    // [6% chance] Great Wins (5.00x - 9.99x)
-    if (effectiveRoll < 0.96) { // 0.90 + 0.06
-        return 5.00 + Math.pow(Math.random(), 2) * 4.99;
-    }
-    // [3% chance] Jackpots (10.00x - 49.99x)
-    if (effectiveRoll < 0.99) { // 0.96 + 0.03
-        return 10.00 + Math.pow(Math.random(), 2.5) * 39.99;
-    }
-    // [1% chance] Legendary Wins (50.00x+)
-    else {
-        // Skewed heavily towards 50x
-        return 50.00 + Math.pow(Math.random(), 3) * 50.00;
-    }
+    if (effectiveRoll < 0.03) return 1.00;
+    if (effectiveRoll < 0.58) return 1.01 + Math.pow(Math.random(), 2) * 0.48;
+    if (effectiveRoll < 0.78) return 1.50 + Math.random() * 0.49;
+    if (effectiveRoll < 0.90) return 2.00 + Math.pow(Math.random(), 1.5) * 2.99;
+    if (effectiveRoll < 0.96) return 5.00 + Math.pow(Math.random(), 2) * 4.99;
+    if (effectiveRoll < 0.99) return 10.00 + Math.pow(Math.random(), 2.5) * 39.99;
+    else return 50.00 + Math.pow(Math.random(), 3) * 50.00;
   }, []);
 
   const handleCashOut = useCallback(() => {
@@ -194,10 +175,9 @@ const App: React.FC = () => {
       setHasCashedOut(true);
       playDing();
       playCashOutVibration();
-      setAnimationText({ key: Date.now(), amount: winnings, type: 'win' });
+      triggerCoinAnimation('win');
     }
-  }, [gameState, hasCashedOut, effectiveMultiplier, betAmount, playDing, playCashOutVibration]);
-
+  }, [gameState, hasCashedOut, effectiveMultiplier, betAmount, playDing, playCashOutVibration, triggerCoinAnimation]);
 
   const endRound = useCallback(() => {
     if (gameLoopRef.current) {
@@ -208,16 +188,15 @@ const App: React.FC = () => {
     playExplosion();
     playCrashVibration();
     setIsShaking(true);
-    setTimeout(() => setIsShaking(false), 500); // Match animation duration
+    setTimeout(() => setIsShaking(false), 500);
 
     setGameState(GameState.CRASHED);
 
-    // Adaptive Difficulty Adjustment
     if (hasCashedOut) {
         setDifficultyFactor(prev => Math.min(DIFFICULTY_MAX, prev + DIFFICULTY_WIN_INCREASE));
     } else {
         setDifficultyFactor(prev => Math.max(DIFFICULTY_MIN, prev - DIFFICULTY_LOSS_DECREASE));
-        setAnimationText({ key: Date.now(), amount: betAmount, type: 'loss' });
+        triggerCoinAnimation('loss');
     }
     
     setHistory(prevHistory => {
@@ -229,8 +208,7 @@ const App: React.FC = () => {
         setGameState(GameState.BETTING);
     }, POST_ROUND_DELAY_MS);
 
-  }, [crashMultiplier, playExplosion, hasCashedOut, betAmount, playCrashVibration]);
-
+  }, [crashMultiplier, playExplosion, hasCashedOut, playCrashVibration, triggerCoinAnimation]);
 
   const startRound = useCallback(() => {
     const safeZone = Math.random() < SAFE_ZONE_CHANCE;
@@ -240,13 +218,13 @@ const App: React.FC = () => {
     setMultiplier(1.00);
     setEffectiveMultiplier(1.00);
     setHasCashedOut(false);
-    wasWarningRef.current = false; // Reset warning state for new round
+    wasWarningRef.current = false;
 
     const newCrashMultiplier = generateCrashPoint(safeZone, difficultyFactor);
     setCrashMultiplier(newCrashMultiplier);
     playTakeoff();
 
-    const multiplierRiseRate = 0.01 + Math.random() * 0.02; // Make rise rate more consistent
+    const multiplierRiseRate = 0.01 + Math.random() * 0.02;
 
     gameLoopRef.current = window.setInterval(() => {
       setMultiplier(prevMultiplier => {
@@ -259,7 +237,6 @@ const App: React.FC = () => {
           return newCrashMultiplier;
         }
 
-        // --- New Payout Drain Logic ---
         const safeCrashPoint = Math.max(newCrashMultiplier, 1.01);
         const normalizedProgress = Math.min(1, Math.log(nextMultiplier) / Math.log(safeCrashPoint));
         const planeY = Math.log(nextMultiplier) / Math.log(CRASH_POINT_MAX) * 80;
@@ -282,7 +259,6 @@ const App: React.FC = () => {
         const warningThreshold = safeZone ? 0.99 : 0.95;
         const isWarning = normalizedProgress > warningThreshold;
         
-        // Trigger vibration only when warning state begins
         if (isWarning && !wasWarningRef.current) {
             playWarningVibration();
         }
@@ -290,13 +266,11 @@ const App: React.FC = () => {
 
         setFlightDynamics({ planeY, shadowY, proximity, isWarning });
         setEffectiveMultiplier(newEffectiveMultiplier);
-        // --- End of New Logic ---
-
+        
         return nextMultiplier;
       });
     }, GAME_LOOP_INTERVAL_MS);
   }, [generateCrashPoint, playTakeoff, endRound, difficultyFactor, updateDrainSound, playWarningVibration]);
-
 
   useEffect(() => {
     let countdownInterval: number | null = null;
@@ -320,33 +294,23 @@ const App: React.FC = () => {
   const handlePlaceBet = () => {
     if (gameState !== GameState.BETTING) return;
 
-    // Validate the raw input string first.
     let numValue = parseFloat(inputBet);
 
-    // Apply validation and clamping rules.
-    if (isNaN(numValue) || numValue < MIN_BET) {
-      numValue = MIN_BET;
-    }
-    if (numValue > MAX_BET) {
-      numValue = MAX_BET;
-    }
-    if (numValue > balance) {
-      numValue = balance;
-    }
+    if (isNaN(numValue) || numValue < MIN_BET) numValue = MIN_BET;
+    if (numValue > MAX_BET) numValue = MAX_BET;
+    if (numValue > balance) numValue = balance;
     
-    // Update state for both input and internal bet amount for consistency.
     setInputBet(numValue.toString());
     setBetAmount(numValue);
 
-    // Proceed to place the bet with the validated and cleaned amount.
     if (balance >= numValue) {
       setBalance(prev => prev - numValue);
       setGameState(GameState.COUNTDOWN);
       setCountdown(COUNTDOWN_SECONDS);
       playBetPlaced();
       playBetPlacedVibration();
+      triggerCoinAnimation('bet');
     } else {
-      // This is a fallback and should not be reached due to clamping.
       alert("Insufficient balance!");
     }
   };
@@ -379,7 +343,7 @@ const App: React.FC = () => {
     } else {
       const rounds = parseInt(autoBetRounds, 10);
       if (gameState === GameState.BETTING && !isNaN(rounds) && rounds > 0) {
-        validateAndSetBet(); // Ensures betAmount is correct before starting
+        validateAndSetBet();
         if (balance >= betAmount) {
           setIsAutoBetActive(true);
           setRoundsRemaining(rounds);
@@ -389,7 +353,6 @@ const App: React.FC = () => {
     }
   };
   
-  // Auto-Bet Logic
   useEffect(() => {
     if (!isAutoBetActive || gameState !== GameState.BETTING) {
       return;
@@ -419,15 +382,18 @@ const App: React.FC = () => {
       setCountdown(COUNTDOWN_SECONDS);
       playBetPlaced();
       playBetPlacedVibration();
+      triggerCoinAnimation('bet');
     } else {
       setIsAutoBetActive(false);
     }
-  }, [isAutoBetActive, gameState, balance, betAmount, roundsRemaining, autoBetInitialBalance, stopOnProfit, stopOnLoss, playBetPlaced, playBetPlacedVibration]);
-
+  }, [isAutoBetActive, gameState, balance, betAmount, roundsRemaining, autoBetInitialBalance, stopOnProfit, stopOnLoss, playBetPlaced, playBetPlacedVibration, triggerCoinAnimation]);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-gray-900 via-indigo-900 to-black text-white font-mono flex flex-col items-center justify-center p-2 sm:p-4 ${isShaking ? 'crash-shake' : ''}`}>
+    <div className={`min-h-screen bg-gray-900 text-white font-mono flex flex-col items-center p-2 sm:p-4 ${isShaking ? 'crash-shake' : ''}`}>
       <style>{`
+        body {
+          background-color: #0c0a12;
+        }
         @keyframes crash-shake {
           10%, 90% { transform: translate3d(-1px, 0, 0); }
           20%, 80% { transform: translate3d(2px, 0, 0); }
@@ -437,25 +403,14 @@ const App: React.FC = () => {
         .crash-shake {
           animation: crash-shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
         }
-        @keyframes float-up {
-          from {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-          }
-          to {
-            transform: translateY(-40px) scale(0.8);
-            opacity: 0;
-          }
-        }
-        .animate-float-up {
-          animation: float-up 2s ease-out forwards;
-        }
       `}</style>
+      <CoinAnimationManager animations={coinAnimations} />
       {showIntroduction ? (
         <Introduction onStartGame={handleStartGame} />
       ) : (
         <>
           <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
+            <Header balance={balance} balanceRef={balanceRef} difficultyFactor={difficultyFactor} />
             <HistoryBar history={history} />
             <GameScreen 
               gameState={gameState}
@@ -481,10 +436,9 @@ const App: React.FC = () => {
               multiplier={multiplier}
               effectiveMultiplier={effectiveMultiplier}
               hasCashedOut={hasCashedOut}
-              difficultyFactor={difficultyFactor}
               playQuickBet={playQuickBet}
               playQuickBetVibration={playQuickBetVibration}
-              animationText={animationText}
+              actionButtonRef={actionButtonRef}
               // Auto-Bet Props
               isAutoBetActive={isAutoBetActive}
               autoBetRounds={autoBetRounds}
@@ -498,11 +452,6 @@ const App: React.FC = () => {
             />
           </div>
           <footer className="w-full max-w-5xl mx-auto text-center text-xs text-gray-400 mt-8 space-y-1">
-            <div className="flex justify-between items-center">
-              <p>{t('footerCreator')}</p>
-              <LanguageSwitcher />
-            </div>
-            <p className="font-bold">{t('footerRtp', { rtp: THEORETICAL_RTP })}</p>
             <p>{t('footerDisclaimer')}</p>
           </footer>
         </>

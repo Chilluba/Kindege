@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameState } from '../types';
-import { MIN_BET, MAX_BET } from '../constants';
+import { MIN_BET } from '../constants';
 import { useTranslation } from '../i18n/useTranslation';
 
 interface ControlsProps {
@@ -11,8 +11,6 @@ interface ControlsProps {
   multiplier: number;
   effectiveMultiplier: number;
   hasCashedOut: boolean;
-  difficultyFactor: number;
-  animationText: { key: number; amount: number; type: 'win' | 'loss' } | null;
   handleBetChange: (value: string) => void;
   validateAndSetBet: () => void;
   setBetAmount: React.Dispatch<React.SetStateAction<number>>;
@@ -20,6 +18,7 @@ interface ControlsProps {
   handleCashOut: () => void;
   playQuickBet: () => void;
   playQuickBetVibration: () => void;
+  actionButtonRef: React.RefObject<HTMLButtonElement>;
   // Auto-Bet Props
   isAutoBetActive: boolean;
   autoBetRounds: string;
@@ -32,159 +31,66 @@ interface ControlsProps {
   handleToggleAutoBet: () => void;
 }
 
-interface FlyingCoinData {
-  id: number;
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-  delay: number;
-}
-
-const FlyingCoin: React.FC<{ coin: FlyingCoinData; onAnimationEnd: (id: number) => void }> = ({ coin, onAnimationEnd }) => {
-    const [style, setStyle] = useState<React.CSSProperties>({
-        position: 'fixed',
-        left: coin.startX - 5,
-        top: coin.startY - 5,
-        opacity: 1,
-    });
-
-    useEffect(() => {
-        const animateTimeout = setTimeout(() => {
-            setStyle(s => ({
-                ...s,
-                left: coin.endX,
-                top: coin.endY,
-                transform: 'scale(0.5)',
-                opacity: 0,
-            }));
-        }, coin.delay);
-
-        const endTimeout = setTimeout(() => {
-            onAnimationEnd(coin.id);
-        }, coin.delay + 1000); // Animation duration is 1s
-
-        return () => {
-            clearTimeout(animateTimeout);
-            clearTimeout(endTimeout);
-        };
-    }, [coin, onAnimationEnd]);
-
-    return (
-        <div
-            style={{
-                ...style,
-                width: '10px',
-                height: '10px',
-                backgroundColor: '#34d399', // emerald-400
-                borderRadius: '50%',
-                zIndex: 9999,
-                transition: 'top 1s cubic-bezier(0.5, 0, 1, 0.5), left 1s cubic-bezier(0.15, 0.75, 0.35, 1), opacity 0.8s linear 0.2s, transform 1s cubic-bezier(0.5, 0, 1, 1)',
-                boxShadow: '0 0 8px #34d399',
-                pointerEvents: 'none',
-            }}
-        />
-    );
-};
-
-
-// Fix: Changed from a default export to a named export to resolve module resolution error.
-export const Controls: React.FC<ControlsProps> = ({
-  gameState,
-  balance,
-  betAmount,
-  inputBet,
-  multiplier,
-  effectiveMultiplier,
-  hasCashedOut,
-  difficultyFactor,
-  animationText,
-  handleBetChange,
-  validateAndSetBet,
-  setBetAmount,
-  handlePlaceBet,
-  handleCashOut,
-  playQuickBet,
-  playQuickBetVibration,
-  isAutoBetActive,
-  autoBetRounds,
-  roundsRemaining,
-  stopOnProfit,
-  stopOnLoss,
-  setAutoBetRounds,
-  setStopOnProfit,
-  setStopOnLoss,
-  handleToggleAutoBet,
-}) => {
+export const Controls: React.FC<ControlsProps> = (props) => {
   const { t } = useTranslation();
+  const { 
+    gameState, balance, betAmount, inputBet, effectiveMultiplier, hasCashedOut,
+    handleBetChange, validateAndSetBet, handlePlaceBet, handleCashOut, playQuickBet, playQuickBetVibration,
+    isAutoBetActive, autoBetRounds, roundsRemaining, stopOnProfit, stopOnLoss,
+    setAutoBetRounds, setStopOnProfit, setStopOnLoss, handleToggleAutoBet, actionButtonRef
+  } = props;
+  
+  const [activeTab, setActiveTab] = useState<'manual' | 'auto'>('manual');
+  
   const isBettingDisabled = gameState !== GameState.BETTING;
-  
-  const buttonAreaRef = useRef<HTMLDivElement>(null);
-  const balanceRef = useRef<HTMLDivElement>(null);
-  const [flyingCoins, setFlyingCoins] = useState<FlyingCoinData[]>([]);
 
+  // Switch tabs if auto-bet becomes active/inactive from logic
   useEffect(() => {
-    if (animationText && animationText.type === 'win' && buttonAreaRef.current && balanceRef.current) {
-        const startRect = buttonAreaRef.current.getBoundingClientRect();
-        const endRect = balanceRef.current.getBoundingClientRect();
-        const startX = startRect.left + startRect.width / 2;
-        const startY = startRect.top + startRect.height / 2;
-
-        const newCoins = Array.from({ length: 15 }).map(() => ({
-            id: Math.random(),
-            startX,
-            startY,
-            endX: endRect.left + endRect.width / 2 + (Math.random() - 0.5) * 40,
-            endY: endRect.top + endRect.height / 2 + (Math.random() - 0.5) * 20,
-            delay: Math.random() * 400,
-        }));
-        
-        setFlyingCoins(currentCoins => [...currentCoins, ...newCoins]);
+    if (isAutoBetActive) {
+      setActiveTab('auto');
     }
-  }, [animationText]);
+  }, [isAutoBetActive]);
   
-  const handleAnimationEnd = useCallback((id: number) => {
-    setFlyingCoins(currentCoins => currentCoins.filter(c => c.id !== id));
-  }, []);
-
-  const quickBet = (amount: number) => {
-    if (isBettingDisabled && !isAutoBetActive) return;
+  const quickSetBet = (amount: number) => {
+    if (isBettingDisabled) return;
     playQuickBet();
     playQuickBetVibration();
-    const newBet = Math.min(MAX_BET, betAmount + amount);
-    handleBetChange(newBet.toString());
+    handleBetChange(amount.toString());
   }
-  
-  const { level: challengeLevel, color: challengeColor } = useMemo(() => {
-    if (difficultyFactor < 0.9) return { level: t('challengeLow'), color: 'text-green-400' };
-    if (difficultyFactor < 1.1) return { level: t('challengeNormal'), color: 'text-yellow-400' };
-    if (difficultyFactor < 1.3) return { level: t('challengeHigh'), color: 'text-orange-400' };
-    return { level: t('challengeIntense'), color: 'text-red-500' };
-  }, [difficultyFactor, t]);
+
+  const handlePlusMinus = (amount: number) => {
+     if (isBettingDisabled) return;
+     playQuickBet();
+     playQuickBetVibration();
+     const currentBet = parseFloat(inputBet) || 0;
+     const newBet = Math.max(MIN_BET, currentBet + amount);
+     handleBetChange(newBet.toString());
+  };
   
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      if (!isBettingDisabled && !isAutoBetActive) {
+      if (!isBettingDisabled && activeTab === 'manual') {
         handlePlaceBet();
       }
     }
   };
 
-  const renderManualButton = () => {
+  const renderActionContent = () => {
     switch(gameState) {
         case GameState.IN_PROGRESS:
             if (hasCashedOut) {
                 return (
-                    <button disabled className="w-full h-full text-lg sm:text-xl font-bold bg-gray-600 rounded-lg cursor-not-allowed flex flex-col items-center justify-center p-2">
+                    <button disabled className="w-full h-full text-lg sm:text-xl font-bold bg-gray-600 rounded-lg cursor-not-allowed flex items-center justify-center p-2">
                         {t('cashedOut')}
                     </button>
                 );
             }
             return (
               <button
+                ref={actionButtonRef}
                 onClick={handleCashOut}
-                className="w-full h-full text-lg sm:text-xl font-bold bg-green-500 hover:bg-green-600 transition-all duration-200 rounded-lg shadow-lg transform active:scale-95 flex flex-col items-center justify-center p-2"
+                className="w-full h-full text-lg sm:text-xl font-bold bg-amber-500 hover:bg-amber-600 transition-all duration-200 rounded-lg shadow-[0_5px_15px_rgba(245,158,11,0.4)] transform active:scale-95 flex flex-col items-center justify-center p-2 text-gray-900"
               >
                 <div>{t('cashOutButton')}</div>
                 <div className="text-base sm:text-lg font-semibold">{(betAmount * effectiveMultiplier).toFixed(2)}</div>
@@ -207,112 +113,118 @@ export const Controls: React.FC<ControlsProps> = ({
 
         case GameState.BETTING:
         default:
+            const betButtonContent = activeTab === 'manual' 
+                ? (<><div>{t('placeBetButton')}</div><div className="text-base sm:text-lg">{parseFloat(inputBet).toFixed(2)}</div></>)
+                : (<div>{t('startAutoBetButton')}</div>);
+
+            const betButtonAction = activeTab === 'manual' ? handlePlaceBet : handleToggleAutoBet;
+            
+            if (isAutoBetActive) {
+              return (
+                <button onClick={handleToggleAutoBet} className="w-full h-full text-base sm:text-lg font-bold bg-red-600 hover:bg-red-700 transition-all duration-200 rounded-lg shadow-lg transform active:scale-95 flex flex-col items-center justify-center p-2">
+                  <div>{t('stopAutoBetButton')}</div>
+                  <div className="text-sm font-semibold">{t('roundsLeft', { count: roundsRemaining })}</div>
+                </button>
+              )
+            }
+            
             return (
               <button
-                onClick={handlePlaceBet}
-                disabled={balance < betAmount || betAmount < MIN_BET || isAutoBetActive}
-                className="w-full h-full text-xl font-bold bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-all duration-200 rounded-lg shadow-lg transform active:scale-95 p-2"
+                ref={actionButtonRef}
+                onClick={betButtonAction}
+                disabled={balance < betAmount || betAmount < MIN_BET}
+                className="w-full h-full text-xl font-bold bg-green-500 hover:bg-green-600 disabled:bg-gray-700 disabled:cursor-not-allowed transition-all duration-200 rounded-lg shadow-[0_5px_15px_rgba(34,197,94,0.4)] transform active:scale-95 p-2 flex flex-col items-center justify-center text-gray-900"
               >
-                {t('placeBetButton')}
+                {betButtonContent}
               </button>
             );
     }
   };
-
-  const renderAutoBetButton = () => {
-      if (isAutoBetActive) {
-        return (
-          <button onClick={handleToggleAutoBet} className="w-full h-full text-base sm:text-lg font-bold bg-amber-600 hover:bg-amber-700 transition-all duration-200 rounded-lg shadow-lg transform active:scale-95 flex flex-col items-center justify-center p-2">
-            <div>{t('stopAutoBetButton')}</div>
-            <div className="text-sm font-semibold">{t('roundsLeft', { count: roundsRemaining })}</div>
-          </button>
-        );
-      }
-      return (
-        <button 
-            onClick={handleToggleAutoBet} 
-            disabled={isBettingDisabled} 
-            className="w-full h-full text-base sm:text-lg font-bold bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-all duration-200 rounded-lg shadow-lg transform active:scale-95 p-2"
-        >
-          {t('startAutoBetButton')}
-        </button>
-      );
-  };
-
-  const autoBetInputStyle = "w-full mt-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-700";
+  
+  const commonInputStyle = "w-full mt-1 px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-md text-white text-center text-base sm:text-lg font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-800";
+  const tabStyle = "px-4 py-2 text-base font-semibold rounded-t-lg transition-colors";
+  const activeTabStyle = "bg-gray-800/60 text-white";
+  const inactiveTabStyle = "bg-gray-900/50 text-gray-400 hover:bg-gray-800/40";
 
   return (
-    <div className="p-2 sm:p-4 bg-black bg-opacity-20 rounded-xl border border-indigo-500/30">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="md:col-span-3 flex flex-col gap-4">
-            <div className="p-3 bg-gray-800/50 rounded-lg">
-                <label htmlFor="bet-amount" className="text-sm text-gray-400">{t('betAmount')}</label>
-                <input
-                    id="bet-amount"
-                    type="number"
-                    value={inputBet}
-                    onChange={(e) => handleBetChange(e.target.value)}
-                    onBlur={validateAndSetBet}
-                    onKeyDown={handleKeyDown}
-                    disabled={isAutoBetActive || isBettingDisabled}
-                    className={autoBetInputStyle}
-                />
-                <div className="grid grid-cols-4 gap-2 mt-2">
-                    <button onClick={() => quickBet(10)} disabled={isAutoBetActive || isBettingDisabled} className="bet-btn">+10</button>
-                    <button onClick={() => quickBet(50)} disabled={isAutoBetActive || isBettingDisabled} className="bet-btn">+50</button>
-                    <button onClick={() => quickBet(100)} disabled={isAutoBetActive || isBettingDisabled} className="bet-btn">+100</button>
-                    <button onClick={() => { playQuickBet(); playQuickBetVibration(); handleBetChange(MAX_BET.toString()); }} disabled={isAutoBetActive || isBettingDisabled} className="bet-btn">MAX</button>
-                </div>
-            </div>
-            
-            <div className="p-3 bg-gray-800/50 rounded-lg grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                    <label className="text-sm text-gray-400">{t('numberOfRounds')}</label>
-                    <input type="number" value={autoBetRounds} onChange={(e) => setAutoBetRounds(e.target.value)} disabled={isAutoBetActive} className={autoBetInputStyle} />
-                </div>
-                <div>
-                    <label className="text-sm text-gray-400">{t('stopOnProfit')}</label>
-                    <input type="number" value={stopOnProfit} onChange={(e) => setStopOnProfit(e.target.value)} placeholder={t('optionalPlaceholder')} disabled={isAutoBetActive} className={autoBetInputStyle} />
-                </div>
-                <div>
-                    <label className="text-sm text-gray-400">{t('stopOnLoss')}</label>
-                    <input type="number" value={stopOnLoss} onChange={(e) => setStopOnLoss(e.target.value)} placeholder={t('optionalPlaceholder')} disabled={isAutoBetActive} className={autoBetInputStyle} />
-                </div>
-            </div>
+    <div className="p-2 sm:p-4 bg-black bg-opacity-30 rounded-xl border border-gray-800">
+        <div className="flex">
+            <button 
+                onClick={() => setActiveTab('manual')} 
+                disabled={isAutoBetActive}
+                className={`${tabStyle} ${activeTab === 'manual' ? activeTabStyle : inactiveTabStyle}`}
+            >
+                {t('manualBet')}
+            </button>
+             <button 
+                onClick={() => setActiveTab('auto')} 
+                disabled={gameState !== GameState.BETTING && !isAutoBetActive}
+                className={`${tabStyle} ${activeTab === 'auto' ? activeTabStyle : inactiveTabStyle}`}
+            >
+                {t('autoBet')}
+            </button>
         </div>
 
-        <div className="md:col-span-2 flex flex-col justify-between min-h-[120px]">
-            <div className="flex justify-between items-center text-sm mb-2">
-                <div ref={balanceRef} className="relative">
-                    <span className="text-gray-400">{t('balance')} <span className="text-white font-semibold text-base sm:text-lg">{balance.toFixed(2)}</span></span>
-                    {animationText && (
-                        <span 
-                            key={animationText.key} 
-                            className={`absolute bottom-full left-1/2 -translate-x-1/2 whitespace-nowrap font-bold text-lg animate-float-up ${animationText.type === 'win' ? 'text-green-400' : 'text-red-500'}`}
-                        >
-                            {animationText.type === 'win' ? '+' : '-'}{animationText.amount.toFixed(2)}
-                        </span>
+        <div className="p-4 bg-gray-800/60 rounded-b-lg rounded-r-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Left Side (Inputs) */}
+                <div className="flex flex-col gap-4">
+                    <div>
+                        <label htmlFor="bet-amount" className="text-sm text-gray-400">{t('betAmount')}</label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <button onClick={() => handlePlusMinus(-10)} disabled={isBettingDisabled} className="bet-op-btn">-</button>
+                          <input
+                              id="bet-amount"
+                              type="number"
+                              value={inputBet}
+                              onChange={(e) => handleBetChange(e.target.value)}
+                              onBlur={validateAndSetBet}
+                              onKeyDown={handleKeyDown}
+                              disabled={isBettingDisabled}
+                              className={commonInputStyle + " text-lg sm:text-xl"}
+                          />
+                          <button onClick={() => handlePlusMinus(10)} disabled={isBettingDisabled} className="bet-op-btn">+</button>
+                        </div>
+                        <div className="flex justify-between gap-2 mt-2">
+                            <button onClick={() => quickSetBet(50)} disabled={isBettingDisabled} className="quick-bet-btn">50</button>
+                            <button onClick={() => quickSetBet(100)} disabled={isBettingDisabled} className="quick-bet-btn">100</button>
+                            <button onClick={() => quickSetBet(500)} disabled={isBettingDisabled} className="quick-bet-btn">500</button>
+                            <button onClick={() => quickSetBet(1000)} disabled={isBettingDisabled} className="quick-bet-btn">1000</button>
+                        </div>
+                    </div>
+                    {activeTab === 'auto' && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-gray-700 pt-4">
+                            <div>
+                                <label className="text-sm text-gray-400">{t('numberOfRounds')}</label>
+                                <input type="number" value={autoBetRounds} onChange={(e) => setAutoBetRounds(e.target.value)} disabled={isAutoBetActive} className={commonInputStyle} />
+                            </div>
+                            <div>
+                                <label className="text-sm text-gray-400">{t('stopOnProfit')}</label>
+                                <input type="number" value={stopOnProfit} onChange={(e) => setStopOnProfit(e.target.value)} placeholder={t('optionalPlaceholder')} disabled={isAutoBetActive} className={commonInputStyle} />
+                            </div>
+                            <div>
+                                <label className="text-sm text-gray-400">{t('stopOnLoss')}</label>
+                                <input type="number" value={stopOnLoss} onChange={(e) => setStopOnLoss(e.target.value)} placeholder={t('optionalPlaceholder')} disabled={isAutoBetActive} className={commonInputStyle} />
+                            </div>
+                        </div>
                     )}
                 </div>
-                <span className="text-gray-400">{t('challenge')} <span className={`font-semibold text-base sm:text-lg ${challengeColor}`}>{challengeLevel}</span></span>
-            </div>
-            <div ref={buttonAreaRef} className="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {renderManualButton()}
-              {renderAutoBetButton()}
+
+                {/* Right Side (Action Button) */}
+                <div className="flex flex-col justify-center min-h-[100px] sm:min-h-[120px]">
+                  {renderActionContent()}
+                </div>
             </div>
         </div>
-      </div>
 
        <style>{`
-            .bet-btn {
-                @apply bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-2 rounded disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors text-sm;
+            .bet-op-btn {
+                @apply bg-gray-700 hover:bg-gray-600 text-white font-bold w-12 h-12 rounded-full disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors text-2xl flex-shrink-0;
+            }
+            .quick-bet-btn {
+                @apply bg-transparent hover:bg-gray-700 border border-gray-600 text-gray-300 font-semibold py-1 px-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm w-full;
             }
         `}</style>
-
-        {/* Render flying coins */}
-        {flyingCoins.map(coin => (
-            <FlyingCoin key={coin.id} coin={coin} onAnimationEnd={handleAnimationEnd} />
-        ))}
     </div>
   );
 };

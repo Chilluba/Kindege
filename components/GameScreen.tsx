@@ -120,7 +120,7 @@ const GameScreen: React.FC<GameScreenProps> = (props) => {
   };
 
   return (
-    <div className={`relative w-full aspect-video bg-black bg-opacity-30 rounded-xl overflow-hidden shadow-2xl border border-indigo-500/30 transition-all duration-300 ${isWarning ? 'warning-glow' : ''}`}>
+    <div className={`relative w-full aspect-video bg-black bg-opacity-30 rounded-xl overflow-hidden shadow-2xl border border-gray-800 transition-all duration-300 ${isWarning ? 'warning-glow' : ''}`}>
         <style>{`
           .grid-background {
             background-image:

@@ -10,3 +10,12 @@ export interface HistoryItem {
   id: number;
   multiplier: number;
 }
+
+export interface CoinAnimationData {
+  id: number;
+  type: 'win' | 'loss' | 'bet';
+  startX: number;
+  startY: number;
+  endX?: number;
+  endY?: number;
+}
