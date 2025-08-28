@@ -57,7 +57,16 @@ const enTranslations = {
     "Callsign: Nomad-3. Destination: Titan's Veil. Status: Entering asteroid cluster. Evasive maneuvers.",
     "Callsign: Warlock-9. Objective: Europa's Core. Status: Unidentified craft closing fast. Maximum power.",
     "Callsign: Eagle-4. Target: Mars Outpost Omega. Status: Hostile lock-on detected. Time to fly."
-  ]
+  ],
+  "manualBet": "Manual",
+  "autoBet": "Auto",
+  "startAutoBetButton": "Start Auto-Bet",
+  "stopAutoBetButton": "Stop Auto-Bet",
+  "roundsLeft": "{count} rounds left",
+  "numberOfRounds": "Number of Rounds",
+  "stopOnProfit": "Stop on Profit >=",
+  "stopOnLoss": "Stop on Loss >=",
+  "optionalPlaceholder": "Optional"
 };
 
 const swTranslations = {
@@ -113,7 +122,16 @@ const swTranslations = {
     "Jina la wito: Nomad-3. Mwisho: Pazia la Titan. Hali: Inaingia kwenye nguzo ya asteroidi. Miondoko ya kukwepa.",
     "Jina la wito: Warlock-9. Lengo: Kiini cha Europa. Hali: Chombo kisichojulikana kinakaribia haraka. Nguvu ya juu.",
     "Jina la wito: Eagle-4. Lengo: Kituo cha Mars Omega. Hali: Kufungwa kwa adui kumegunduliwa. Wakati wa kuruka."
-  ]
+  ],
+  "manualBet": "Mwongozo",
+  "autoBet": "Otomatiki",
+  "startAutoBetButton": "Anza Dau Otomatiki",
+  "stopAutoBetButton": "Simamisha Dau Otomatiki",
+  "roundsLeft": "Raundi {count} zimesalia",
+  "numberOfRounds": "Idadi ya Raundi",
+  "stopOnProfit": "Simamisha kwa faida >=",
+  "stopOnLoss": "Simamisha kwa hasara >=",
+  "optionalPlaceholder": "Hiari"
 };
 
 // Create a map of language codes to their translation modules. This bundles the translations with the app.

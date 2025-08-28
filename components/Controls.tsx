@@ -20,6 +20,16 @@ interface ControlsProps {
   handleCashOut: () => void;
   playQuickBet: () => void;
   playQuickBetVibration: () => void;
+  // Auto-Bet Props
+  isAutoBetActive: boolean;
+  autoBetRounds: string;
+  roundsRemaining: number;
+  stopOnProfit: string;
+  stopOnLoss: string;
+  setAutoBetRounds: (value: string) => void;
+  setStopOnProfit: (value: string) => void;
+  setStopOnLoss: (value: string) => void;
+  handleToggleAutoBet: () => void;
 }
 
 interface FlyingCoinData {
@@ -78,7 +88,8 @@ const FlyingCoin: React.FC<{ coin: FlyingCoinData; onAnimationEnd: (id: number) 
 };
 
 
-const Controls: React.FC<ControlsProps> = ({
+// Fix: Changed from a default export to a named export to resolve module resolution error.
+export const Controls: React.FC<ControlsProps> = ({
   gameState,
   balance,
   betAmount,
@@ -95,17 +106,26 @@ const Controls: React.FC<ControlsProps> = ({
   handleCashOut,
   playQuickBet,
   playQuickBetVibration,
+  isAutoBetActive,
+  autoBetRounds,
+  roundsRemaining,
+  stopOnProfit,
+  stopOnLoss,
+  setAutoBetRounds,
+  setStopOnProfit,
+  setStopOnLoss,
+  handleToggleAutoBet,
 }) => {
   const { t } = useTranslation();
   const isBettingDisabled = gameState !== GameState.BETTING;
   
-  const mainButtonRef = useRef<HTMLDivElement>(null);
+  const buttonAreaRef = useRef<HTMLDivElement>(null);
   const balanceRef = useRef<HTMLDivElement>(null);
   const [flyingCoins, setFlyingCoins] = useState<FlyingCoinData[]>([]);
 
   useEffect(() => {
-    if (animationText && animationText.type === 'win' && mainButtonRef.current && balanceRef.current) {
-        const startRect = mainButtonRef.current.getBoundingClientRect();
+    if (animationText && animationText.type === 'win' && buttonAreaRef.current && balanceRef.current) {
+        const startRect = buttonAreaRef.current.getBoundingClientRect();
         const endRect = balanceRef.current.getBoundingClientRect();
         const startX = startRect.left + startRect.width / 2;
         const startY = startRect.top + startRect.height / 2;
@@ -128,7 +148,7 @@ const Controls: React.FC<ControlsProps> = ({
   }, []);
 
   const quickBet = (amount: number) => {
-    if (isBettingDisabled) return;
+    if (isBettingDisabled && !isAutoBetActive) return;
     playQuickBet();
     playQuickBetVibration();
     const newBet = Math.min(MAX_BET, betAmount + amount);
@@ -145,18 +165,18 @@ const Controls: React.FC<ControlsProps> = ({
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      if (!isBettingDisabled) {
+      if (!isBettingDisabled && !isAutoBetActive) {
         handlePlaceBet();
       }
     }
   };
 
-  const renderMainButton = () => {
+  const renderManualButton = () => {
     switch(gameState) {
         case GameState.IN_PROGRESS:
             if (hasCashedOut) {
                 return (
-                    <button disabled className="w-full h-full text-lg sm:text-xl md:text-2xl font-bold bg-gray-600 rounded-lg cursor-not-allowed flex flex-col items-center justify-center">
+                    <button disabled className="w-full h-full text-lg sm:text-xl font-bold bg-gray-600 rounded-lg cursor-not-allowed flex flex-col items-center justify-center p-2">
                         {t('cashedOut')}
                     </button>
                 );
@@ -164,23 +184,23 @@ const Controls: React.FC<ControlsProps> = ({
             return (
               <button
                 onClick={handleCashOut}
-                className="w-full h-full text-lg sm:text-xl md:text-2xl font-bold bg-green-500 hover:bg-green-600 transition-all duration-200 rounded-lg shadow-lg transform active:scale-95 flex flex-col items-center justify-center"
+                className="w-full h-full text-lg sm:text-xl font-bold bg-green-500 hover:bg-green-600 transition-all duration-200 rounded-lg shadow-lg transform active:scale-95 flex flex-col items-center justify-center p-2"
               >
                 <div>{t('cashOutButton')}</div>
-                <div className="text-xl sm:text-2xl font-semibold">{(betAmount * effectiveMultiplier).toFixed(2)}</div>
+                <div className="text-base sm:text-lg font-semibold">{(betAmount * effectiveMultiplier).toFixed(2)}</div>
               </button>
             );
         
         case GameState.COUNTDOWN:
              return (
-                <button disabled className="w-full h-full text-lg sm:text-xl md:text-2xl font-bold bg-gray-700 rounded-lg cursor-wait">
+                <button disabled className="w-full h-full text-lg sm:text-xl font-bold bg-gray-700 rounded-lg cursor-wait p-2">
                     {t('getReady')}
                 </button>
             );
 
         case GameState.CRASHED:
              return (
-                <button disabled className="w-full h-full text-lg sm:text-xl md:text-2xl font-bold bg-red-800 rounded-lg cursor-not-allowed">
+                <button disabled className="w-full h-full text-lg sm:text-xl font-bold bg-red-800 rounded-lg cursor-not-allowed p-2">
                     {t('roundOver')}
                 </button>
             );
@@ -190,8 +210,8 @@ const Controls: React.FC<ControlsProps> = ({
             return (
               <button
                 onClick={handlePlaceBet}
-                disabled={balance < betAmount || betAmount < MIN_BET}
-                className="w-full h-full text-xl sm:text-2xl md:text-3xl font-bold bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-all duration-200 rounded-lg shadow-lg transform active:scale-95"
+                disabled={balance < betAmount || betAmount < MIN_BET || isAutoBetActive}
+                className="w-full h-full text-xl font-bold bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-all duration-200 rounded-lg shadow-lg transform active:scale-95 p-2"
               >
                 {t('placeBetButton')}
               </button>
@@ -199,47 +219,87 @@ const Controls: React.FC<ControlsProps> = ({
     }
   };
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-2 sm:p-4 bg-black bg-opacity-20 rounded-xl border border-indigo-500/30">
-      <div className="md:col-span-3 flex flex-col gap-4">
-        <div className="p-3 bg-gray-800/50 rounded-lg">
-            <label htmlFor="bet-amount" className="text-sm text-gray-400">{t('betAmount')}</label>
-            <input
-                id="bet-amount"
-                type="number"
-                value={inputBet}
-                onChange={(e) => handleBetChange(e.target.value)}
-                onBlur={validateAndSetBet}
-                onKeyDown={handleKeyDown}
-                disabled={isBettingDisabled}
-                className="w-full mt-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-700"
-            />
-             <div className="grid grid-cols-4 gap-2 mt-2">
-                <button onClick={() => quickBet(10)} disabled={isBettingDisabled} className="bet-btn">+10</button>
-                <button onClick={() => quickBet(50)} disabled={isBettingDisabled} className="bet-btn">+50</button>
-                <button onClick={() => quickBet(100)} disabled={isBettingDisabled} className="bet-btn">+100</button>
-                <button onClick={() => { playQuickBet(); playQuickBetVibration(); handleBetChange(MAX_BET.toString()); }} disabled={isBettingDisabled} className="bet-btn">MAX</button>
-            </div>
-        </div>
-      </div>
+  const renderAutoBetButton = () => {
+      if (isAutoBetActive) {
+        return (
+          <button onClick={handleToggleAutoBet} className="w-full h-full text-base sm:text-lg font-bold bg-amber-600 hover:bg-amber-700 transition-all duration-200 rounded-lg shadow-lg transform active:scale-95 flex flex-col items-center justify-center p-2">
+            <div>{t('stopAutoBetButton')}</div>
+            <div className="text-sm font-semibold">{t('roundsLeft', { count: roundsRemaining })}</div>
+          </button>
+        );
+      }
+      return (
+        <button 
+            onClick={handleToggleAutoBet} 
+            disabled={isBettingDisabled} 
+            className="w-full h-full text-base sm:text-lg font-bold bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-all duration-200 rounded-lg shadow-lg transform active:scale-95 p-2"
+        >
+          {t('startAutoBetButton')}
+        </button>
+      );
+  };
 
-      <div className="md:col-span-2 flex flex-col justify-between min-h-[120px]">
-        <div className="flex justify-between items-center text-sm mb-2">
-            <div ref={balanceRef} className="relative">
-                <span className="text-gray-400">{t('balance')} <span className="text-white font-semibold text-base sm:text-lg">{balance.toFixed(2)}</span></span>
-                 {animationText && (
-                    <span 
-                        key={animationText.key} 
-                        className={`absolute bottom-full left-1/2 -translate-x-1/2 whitespace-nowrap font-bold text-lg animate-float-up ${animationText.type === 'win' ? 'text-green-400' : 'text-red-500'}`}
-                     >
-                        {animationText.type === 'win' ? '+' : '-'}{animationText.amount.toFixed(2)}
-                    </span>
-                )}
+  const autoBetInputStyle = "w-full mt-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-700";
+
+  return (
+    <div className="p-2 sm:p-4 bg-black bg-opacity-20 rounded-xl border border-indigo-500/30">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="md:col-span-3 flex flex-col gap-4">
+            <div className="p-3 bg-gray-800/50 rounded-lg">
+                <label htmlFor="bet-amount" className="text-sm text-gray-400">{t('betAmount')}</label>
+                <input
+                    id="bet-amount"
+                    type="number"
+                    value={inputBet}
+                    onChange={(e) => handleBetChange(e.target.value)}
+                    onBlur={validateAndSetBet}
+                    onKeyDown={handleKeyDown}
+                    disabled={isAutoBetActive || isBettingDisabled}
+                    className={autoBetInputStyle}
+                />
+                <div className="grid grid-cols-4 gap-2 mt-2">
+                    <button onClick={() => quickBet(10)} disabled={isAutoBetActive || isBettingDisabled} className="bet-btn">+10</button>
+                    <button onClick={() => quickBet(50)} disabled={isAutoBetActive || isBettingDisabled} className="bet-btn">+50</button>
+                    <button onClick={() => quickBet(100)} disabled={isAutoBetActive || isBettingDisabled} className="bet-btn">+100</button>
+                    <button onClick={() => { playQuickBet(); playQuickBetVibration(); handleBetChange(MAX_BET.toString()); }} disabled={isAutoBetActive || isBettingDisabled} className="bet-btn">MAX</button>
+                </div>
             </div>
-            <span className="text-gray-400">{t('challenge')} <span className={`font-semibold text-base sm:text-lg ${challengeColor}`}>{challengeLevel}</span></span>
+            
+            <div className="p-3 bg-gray-800/50 rounded-lg grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                    <label className="text-sm text-gray-400">{t('numberOfRounds')}</label>
+                    <input type="number" value={autoBetRounds} onChange={(e) => setAutoBetRounds(e.target.value)} disabled={isAutoBetActive} className={autoBetInputStyle} />
+                </div>
+                <div>
+                    <label className="text-sm text-gray-400">{t('stopOnProfit')}</label>
+                    <input type="number" value={stopOnProfit} onChange={(e) => setStopOnProfit(e.target.value)} placeholder={t('optionalPlaceholder')} disabled={isAutoBetActive} className={autoBetInputStyle} />
+                </div>
+                <div>
+                    <label className="text-sm text-gray-400">{t('stopOnLoss')}</label>
+                    <input type="number" value={stopOnLoss} onChange={(e) => setStopOnLoss(e.target.value)} placeholder={t('optionalPlaceholder')} disabled={isAutoBetActive} className={autoBetInputStyle} />
+                </div>
+            </div>
         </div>
-        <div ref={mainButtonRef} className="flex-grow">
-          {renderMainButton()}
+
+        <div className="md:col-span-2 flex flex-col justify-between min-h-[120px]">
+            <div className="flex justify-between items-center text-sm mb-2">
+                <div ref={balanceRef} className="relative">
+                    <span className="text-gray-400">{t('balance')} <span className="text-white font-semibold text-base sm:text-lg">{balance.toFixed(2)}</span></span>
+                    {animationText && (
+                        <span 
+                            key={animationText.key} 
+                            className={`absolute bottom-full left-1/2 -translate-x-1/2 whitespace-nowrap font-bold text-lg animate-float-up ${animationText.type === 'win' ? 'text-green-400' : 'text-red-500'}`}
+                        >
+                            {animationText.type === 'win' ? '+' : '-'}{animationText.amount.toFixed(2)}
+                        </span>
+                    )}
+                </div>
+                <span className="text-gray-400">{t('challenge')} <span className={`font-semibold text-base sm:text-lg ${challengeColor}`}>{challengeLevel}</span></span>
+            </div>
+            <div ref={buttonAreaRef} className="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {renderManualButton()}
+              {renderAutoBetButton()}
+            </div>
         </div>
       </div>
 
@@ -256,5 +316,3 @@ const Controls: React.FC<ControlsProps> = ({
     </div>
   );
 };
-
-export default Controls;

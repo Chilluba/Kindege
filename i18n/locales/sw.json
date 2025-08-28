@@ -51,5 +51,14 @@
     "Jina la wito: Nomad-3. Mwisho: Pazia la Titan. Hali: Inaingia kwenye nguzo ya asteroidi. Miondoko ya kukwepa.",
     "Jina la wito: Warlock-9. Lengo: Kiini cha Europa. Hali: Chombo kisichojulikana kinakaribia haraka. Nguvu ya juu.",
     "Jina la wito: Eagle-4. Lengo: Kituo cha Mars Omega. Hali: Kufungwa kwa adui kumegunduliwa. Wakati wa kuruka."
-  ]
+  ],
+  "manualBet": "Mwongozo",
+  "autoBet": "Otomatiki",
+  "startAutoBetButton": "Anza Dau Otomatiki",
+  "stopAutoBetButton": "Simamisha Dau Otomatiki",
+  "roundsLeft": "Raundi {count} zimesalia",
+  "numberOfRounds": "Idadi ya Raundi",
+  "stopOnProfit": "Simamisha kwa faida >=",
+  "stopOnLoss": "Simamisha kwa hasara >=",
+  "optionalPlaceholder": "Hiari"
 }

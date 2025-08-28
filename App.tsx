@@ -20,7 +20,8 @@ import {
 } from './constants';
 import HistoryBar from './components/HistoryBar';
 import GameScreen from './components/GameScreen';
-import Controls from './components/Controls';
+// Fix: Changed to a named import to match the updated export in Controls.tsx.
+import { Controls } from './components/Controls';
 import Introduction from './components/Introduction';
 import useSound from './hooks/useSound';
 import useVibration from './hooks/useVibration';
@@ -53,6 +54,14 @@ const App: React.FC = () => {
   const [isShaking, setIsShaking] = useState<boolean>(false);
   
   const [animationText, setAnimationText] = useState<{ key: number; amount: number; type: 'win' | 'loss' } | null>(null);
+
+  // Auto-Bet State
+  const [isAutoBetActive, setIsAutoBetActive] = useState<boolean>(false);
+  const [autoBetRounds, setAutoBetRounds] = useState<string>('10');
+  const [roundsRemaining, setRoundsRemaining] = useState<number>(0);
+  const [autoBetInitialBalance, setAutoBetInitialBalance] = useState<number>(0);
+  const [stopOnProfit, setStopOnProfit] = useState<string>('');
+  const [stopOnLoss, setStopOnLoss] = useState<string>('');
 
   const { 
     playTakeoff, 
@@ -364,6 +373,58 @@ const App: React.FC = () => {
     setShowIntroduction(false);
   };
 
+  const handleToggleAutoBet = () => {
+    if (isAutoBetActive) {
+      setIsAutoBetActive(false);
+    } else {
+      const rounds = parseInt(autoBetRounds, 10);
+      if (gameState === GameState.BETTING && !isNaN(rounds) && rounds > 0) {
+        validateAndSetBet(); // Ensures betAmount is correct before starting
+        if (balance >= betAmount) {
+          setIsAutoBetActive(true);
+          setRoundsRemaining(rounds);
+          setAutoBetInitialBalance(balance);
+        }
+      }
+    }
+  };
+  
+  // Auto-Bet Logic
+  useEffect(() => {
+    if (!isAutoBetActive || gameState !== GameState.BETTING) {
+      return;
+    }
+
+    if (roundsRemaining <= 0) {
+      setIsAutoBetActive(false);
+      return;
+    }
+
+    const profit = balance - autoBetInitialBalance;
+    const stopProfitAmount = parseFloat(stopOnProfit);
+    const stopLossAmount = parseFloat(stopOnLoss);
+
+    if (
+      (!isNaN(stopProfitAmount) && stopProfitAmount > 0 && profit >= stopProfitAmount) ||
+      (!isNaN(stopLossAmount) && stopLossAmount > 0 && -profit >= stopLossAmount)
+    ) {
+      setIsAutoBetActive(false);
+      return;
+    }
+
+    if (balance >= betAmount && betAmount >= MIN_BET) {
+      setBalance(prev => prev - betAmount);
+      setRoundsRemaining(prev => prev - 1);
+      setGameState(GameState.COUNTDOWN);
+      setCountdown(COUNTDOWN_SECONDS);
+      playBetPlaced();
+      playBetPlacedVibration();
+    } else {
+      setIsAutoBetActive(false);
+    }
+  }, [isAutoBetActive, gameState, balance, betAmount, roundsRemaining, autoBetInitialBalance, stopOnProfit, stopOnLoss, playBetPlaced, playBetPlacedVibration]);
+
+
   return (
     <div className={`min-h-screen bg-gradient-to-b from-gray-900 via-indigo-900 to-black text-white font-mono flex flex-col items-center justify-center p-2 sm:p-4 ${isShaking ? 'crash-shake' : ''}`}>
       <style>{`
@@ -424,6 +485,16 @@ const App: React.FC = () => {
               playQuickBet={playQuickBet}
               playQuickBetVibration={playQuickBetVibration}
               animationText={animationText}
+              // Auto-Bet Props
+              isAutoBetActive={isAutoBetActive}
+              autoBetRounds={autoBetRounds}
+              roundsRemaining={roundsRemaining}
+              stopOnProfit={stopOnProfit}
+              stopOnLoss={stopOnLoss}
+              setAutoBetRounds={setAutoBetRounds}
+              setStopOnProfit={setStopOnProfit}
+              setStopOnLoss={setStopOnLoss}
+              handleToggleAutoBet={handleToggleAutoBet}
             />
           </div>
           <footer className="w-full max-w-5xl mx-auto text-center text-xs text-gray-400 mt-8 space-y-1">

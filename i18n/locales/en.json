@@ -51,5 +51,14 @@
     "Callsign: Nomad-3. Destination: Titan's Veil. Status: Entering asteroid cluster. Evasive maneuvers.",
     "Callsign: Warlock-9. Objective: Europa's Core. Status: Unidentified craft closing fast. Maximum power.",
     "Callsign: Eagle-4. Target: Mars Outpost Omega. Status: Hostile lock-on detected. Time to fly."
-  ]
+  ],
+  "manualBet": "Manual",
+  "autoBet": "Auto",
+  "startAutoBetButton": "Start Auto-Bet",
+  "stopAutoBetButton": "Stop Auto-Bet",
+  "roundsLeft": "{count} rounds left",
+  "numberOfRounds": "Number of Rounds",
+  "stopOnProfit": "Stop on Profit >=",
+  "stopOnLoss": "Stop on Loss >=",
+  "optionalPlaceholder": "Optional"
 }
