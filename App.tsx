@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState } from './types';
 import type { HistoryItem } from './types';
-import { GoogleGenAI } from "@google/genai";
 import {
   INITIAL_BALANCE,
   MIN_BET,
@@ -27,10 +26,15 @@ import Introduction from './components/Introduction';
 import useSound from './hooks/useSound';
 import useVibration from './hooks/useVibration';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const predefinedMissions = [
+  "Callsign: Ghost-7. Objective: Io Relay. Status: Anomalous energy signature detected. Pushing the core.",
+  "Callsign: Viper-1. Target: Ganymede Station. Status: Shadow vessel on an intercept course. Engaging thrusters.",
+  "Callsign: Nomad-3. Destination: Titan's Veil. Status: Entering asteroid cluster. Evasive maneuvers.",
+  "Callsign: Warlock-9. Objective: Europa's Core. Status: Unidentified craft closing fast. Maximum power.",
+  "Callsign: Eagle-4. Target: Mars Outpost Omega. Status: Hostile lock-on detected. Time to fly.",
+];
 
 const App: React.FC = () => {
-  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [showIntroduction, setShowIntroduction] = useState<boolean>(true);
   const [gameState, setGameState] = useState<GameState>(GameState.BETTING);
   const [balance, setBalance] = useState<number>(INITIAL_BALANCE);
@@ -82,14 +86,7 @@ const App: React.FC = () => {
 
   const gameLoopRef = useRef<number | null>(null);
   const wasWarningRef = useRef<boolean>(false);
-  
-  useEffect(() => {
-    if (!process.env.API_KEY) {
-      const error = "Google Gemini API key not found in environment variables.";
-      console.error(error + " Please see README for setup instructions to enable AI features.");
-      setApiKeyError(error);
-    }
-  }, []);
+  const lastMissionIndex = useRef<number | null>(null);
   
   useEffect(() => {
     if (animationText) {
@@ -100,35 +97,20 @@ const App: React.FC = () => {
     }
   }, [animationText]);
 
-  const generateFlightLog = useCallback(async () => {
-    if (apiKeyError) {
-      setFlightLog("Mission details corrupted. API key not configured.");
-      setIsGeneratingLog(false);
-      return;
-    }
+  const generateFlightLog = useCallback(() => {
     setIsGeneratingLog(true);
-    setFlightLog('');
-    try {
-        const prompt = `Generate a short, futuristic flight log for a dangerous single-round mission codenamed "Shadow Flight".
-        The mission is a high-risk flight where an enemy "shadow" vehicle will give chase.
-        Include a creative callsign, a destination, and a brief, slightly ominous status update.
-        Keep it concise, under 200 characters.
-        Example: "Callsign: Viper-1. Target: Ganymede Relay. Status: Shadow signature detected. Engaging thrust."`;
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-        });
-
-        const text = response.text;
-        setFlightLog(text.trim());
-    } catch (error) {
-        console.error("Error generating flight log:", error);
-        setFlightLog("Mission details corrupted. Proceed with caution.");
-    } finally {
-        setIsGeneratingLog(false);
-    }
-  }, [apiKeyError]);
+    // Simulate a brief loading period to maintain the "AWAITING MISSION BRIEF" feel.
+    setTimeout(() => {
+      let nextIndex;
+      do {
+        nextIndex = Math.floor(Math.random() * predefinedMissions.length);
+      } while (predefinedMissions.length > 1 && nextIndex === lastMissionIndex.current);
+      
+      lastMissionIndex.current = nextIndex;
+      setFlightLog(predefinedMissions[nextIndex]);
+      setIsGeneratingLog(false);
+    }, 500);
+  }, []);
   
   useEffect(() => {
     if (gameState === GameState.BETTING) {
@@ -418,12 +400,6 @@ const App: React.FC = () => {
       ) : (
         <>
           <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
-             {apiKeyError && (
-              <div className="w-full p-3 bg-red-900/70 border border-red-600 rounded-lg text-red-200 text-center text-sm">
-                <p><span className="font-bold">API Key Error:</span> {apiKeyError}</p>
-                <p>The core game remains playable, but AI mission briefings are disabled.</p>
-              </div>
-            )}
             <HistoryBar history={history} />
             <GameScreen 
               gameState={gameState}
