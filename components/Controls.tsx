@@ -1,7 +1,7 @@
-
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { GameState } from '../types';
 import { MIN_BET, MAX_BET } from '../constants';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface ControlsProps {
   gameState: GameState;
@@ -96,6 +96,7 @@ const Controls: React.FC<ControlsProps> = ({
   playQuickBet,
   playQuickBetVibration,
 }) => {
+  const { t } = useTranslation();
   const isBettingDisabled = gameState !== GameState.BETTING;
   
   const mainButtonRef = useRef<HTMLDivElement>(null);
@@ -135,11 +136,11 @@ const Controls: React.FC<ControlsProps> = ({
   }
   
   const { level: challengeLevel, color: challengeColor } = useMemo(() => {
-    if (difficultyFactor < 0.9) return { level: 'Low', color: 'text-green-400' };
-    if (difficultyFactor < 1.1) return { level: 'Normal', color: 'text-yellow-400' };
-    if (difficultyFactor < 1.3) return { level: 'High', color: 'text-orange-400' };
-    return { level: 'Intense', color: 'text-red-500' };
-  }, [difficultyFactor]);
+    if (difficultyFactor < 0.9) return { level: t('challengeLow'), color: 'text-green-400' };
+    if (difficultyFactor < 1.1) return { level: t('challengeNormal'), color: 'text-yellow-400' };
+    if (difficultyFactor < 1.3) return { level: t('challengeHigh'), color: 'text-orange-400' };
+    return { level: t('challengeIntense'), color: 'text-red-500' };
+  }, [difficultyFactor, t]);
   
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
@@ -156,7 +157,7 @@ const Controls: React.FC<ControlsProps> = ({
             if (hasCashedOut) {
                 return (
                     <button disabled className="w-full h-full text-lg sm:text-xl md:text-2xl font-bold bg-gray-600 rounded-lg cursor-not-allowed flex flex-col items-center justify-center">
-                        Cashed Out!
+                        {t('cashedOut')}
                     </button>
                 );
             }
@@ -165,7 +166,7 @@ const Controls: React.FC<ControlsProps> = ({
                 onClick={handleCashOut}
                 className="w-full h-full text-lg sm:text-xl md:text-2xl font-bold bg-green-500 hover:bg-green-600 transition-all duration-200 rounded-lg shadow-lg transform active:scale-95 flex flex-col items-center justify-center"
               >
-                <div>Cash Out</div>
+                <div>{t('cashOutButton')}</div>
                 <div className="text-xl sm:text-2xl font-semibold">{(betAmount * effectiveMultiplier).toFixed(2)}</div>
               </button>
             );
@@ -173,14 +174,14 @@ const Controls: React.FC<ControlsProps> = ({
         case GameState.COUNTDOWN:
              return (
                 <button disabled className="w-full h-full text-lg sm:text-xl md:text-2xl font-bold bg-gray-700 rounded-lg cursor-wait">
-                    Get Ready...
+                    {t('getReady')}
                 </button>
             );
 
         case GameState.CRASHED:
              return (
                 <button disabled className="w-full h-full text-lg sm:text-xl md:text-2xl font-bold bg-red-800 rounded-lg cursor-not-allowed">
-                    Round Over
+                    {t('roundOver')}
                 </button>
             );
 
@@ -192,7 +193,7 @@ const Controls: React.FC<ControlsProps> = ({
                 disabled={balance < betAmount || betAmount < MIN_BET}
                 className="w-full h-full text-xl sm:text-2xl md:text-3xl font-bold bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-all duration-200 rounded-lg shadow-lg transform active:scale-95"
               >
-                Place Bet
+                {t('placeBetButton')}
               </button>
             );
     }
@@ -202,7 +203,7 @@ const Controls: React.FC<ControlsProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-2 sm:p-4 bg-black bg-opacity-20 rounded-xl border border-indigo-500/30">
       <div className="md:col-span-3 flex flex-col gap-4">
         <div className="p-3 bg-gray-800/50 rounded-lg">
-            <label htmlFor="bet-amount" className="text-sm text-gray-400">Bet Amount</label>
+            <label htmlFor="bet-amount" className="text-sm text-gray-400">{t('betAmount')}</label>
             <input
                 id="bet-amount"
                 type="number"
@@ -225,7 +226,7 @@ const Controls: React.FC<ControlsProps> = ({
       <div className="md:col-span-2 flex flex-col justify-between min-h-[120px]">
         <div className="flex justify-between items-center text-sm mb-2">
             <div ref={balanceRef} className="relative">
-                <span className="text-gray-400">Balance: <span className="text-white font-semibold text-base sm:text-lg">{balance.toFixed(2)}</span></span>
+                <span className="text-gray-400">{t('balance')} <span className="text-white font-semibold text-base sm:text-lg">{balance.toFixed(2)}</span></span>
                  {animationText && (
                     <span 
                         key={animationText.key} 
@@ -235,7 +236,7 @@ const Controls: React.FC<ControlsProps> = ({
                     </span>
                 )}
             </div>
-            <span className="text-gray-400">Challenge: <span className={`font-semibold text-base sm:text-lg ${challengeColor}`}>{challengeLevel}</span></span>
+            <span className="text-gray-400">{t('challenge')} <span className={`font-semibold text-base sm:text-lg ${challengeColor}`}>{challengeLevel}</span></span>
         </div>
         <div ref={mainButtonRef} className="flex-grow">
           {renderMainButton()}

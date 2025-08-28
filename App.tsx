@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState } from './types';
 import type { HistoryItem } from './types';
@@ -25,16 +24,11 @@ import Controls from './components/Controls';
 import Introduction from './components/Introduction';
 import useSound from './hooks/useSound';
 import useVibration from './hooks/useVibration';
-
-const predefinedMissions = [
-  "Callsign: Ghost-7. Objective: Io Relay. Status: Anomalous energy signature detected. Pushing the core.",
-  "Callsign: Viper-1. Target: Ganymede Station. Status: Shadow vessel on an intercept course. Engaging thrusters.",
-  "Callsign: Nomad-3. Destination: Titan's Veil. Status: Entering asteroid cluster. Evasive maneuvers.",
-  "Callsign: Warlock-9. Objective: Europa's Core. Status: Unidentified craft closing fast. Maximum power.",
-  "Callsign: Eagle-4. Target: Mars Outpost Omega. Status: Hostile lock-on detected. Time to fly.",
-];
+import { useTranslation } from './i18n/useTranslation';
+import LanguageSwitcher from './components/LanguageSwitcher';
 
 const App: React.FC = () => {
+  const { t, getMissions } = useTranslation();
   const [showIntroduction, setShowIntroduction] = useState<boolean>(true);
   const [gameState, setGameState] = useState<GameState>(GameState.BETTING);
   const [balance, setBalance] = useState<number>(INITIAL_BALANCE);
@@ -98,6 +92,7 @@ const App: React.FC = () => {
   }, [animationText]);
 
   const generateFlightLog = useCallback(() => {
+    const predefinedMissions = getMissions();
     setIsGeneratingLog(true);
     // Simulate a brief loading period to maintain the "AWAITING MISSION BRIEF" feel.
     setTimeout(() => {
@@ -110,7 +105,7 @@ const App: React.FC = () => {
       setFlightLog(predefinedMissions[nextIndex]);
       setIsGeneratingLog(false);
     }, 500);
-  }, []);
+  }, [getMissions]);
   
   useEffect(() => {
     if (gameState === GameState.BETTING) {
@@ -431,10 +426,13 @@ const App: React.FC = () => {
               animationText={animationText}
             />
           </div>
-          <footer className="text-center text-xs text-gray-400 mt-8">
-            <p>Shadow Flight - Created by Salmin Habibu</p>
-            <p className="font-bold">Theoretical RTP: ~{THEORETICAL_RTP}%</p>
-            <p>Disclaimer: This is a simulation game for entertainment purposes only. No real money is involved.</p>
+          <footer className="w-full max-w-5xl mx-auto text-center text-xs text-gray-400 mt-8 space-y-1">
+            <div className="flex justify-between items-center">
+              <p>{t('footerCreator')}</p>
+              <LanguageSwitcher />
+            </div>
+            <p className="font-bold">{t('footerRtp', { rtp: THEORETICAL_RTP })}</p>
+            <p>{t('footerDisclaimer')}</p>
           </footer>
         </>
       )}

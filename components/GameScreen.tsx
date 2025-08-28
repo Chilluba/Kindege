@@ -1,8 +1,8 @@
-
 import React, { useMemo } from 'react';
 import { GameState } from '../types';
 import { PlaneIcon, ExplosionIcon, ShieldIcon } from './icons';
 import { GAME_LOOP_INTERVAL_MS } from '../constants';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -26,6 +26,7 @@ const PayoutIndicator: React.FC<{
     effectiveMultiplier: number;
     betAmount: number;
 }> = ({ multiplier, effectiveMultiplier, betAmount }) => {
+    const { t } = useTranslation();
     const drainPercent = multiplier > 1 ? 1 - (effectiveMultiplier / multiplier) : 0;
     
     const payoutColor = useMemo(() => {
@@ -36,13 +37,14 @@ const PayoutIndicator: React.FC<{
 
     return (
         <div className={`text-lg sm:text-xl md:text-2xl font-bold transition-colors duration-200 ${payoutColor}`}>
-            Payout: {(betAmount * effectiveMultiplier).toFixed(2)}
+            {t('payout')} {(betAmount * effectiveMultiplier).toFixed(2)}
         </div>
     );
 };
 
 
 const GameScreen: React.FC<GameScreenProps> = (props) => {
+  const { t } = useTranslation();
   const { 
     gameState, 
     multiplier, 
@@ -76,12 +78,12 @@ const GameScreen: React.FC<GameScreenProps> = (props) => {
             <div className="text-center p-4 max-w-md">
                 {isGeneratingLog ? (
                     <>
-                        <div className="text-lg text-indigo-300 animate-pulse">AWAITING MISSION BRIEF...</div>
-                        <div className="text-sm text-gray-400 mt-2">Connecting to command...</div>
+                        <div className="text-lg text-indigo-300 animate-pulse">{t('awaitingMission')}</div>
+                        <div className="text-sm text-gray-400 mt-2">{t('connectingCommand')}</div>
                     </>
                 ) : (
                     <>
-                        <div className="text-lg text-indigo-300">MISSION BRIEFING</div>
+                        <div className="text-lg text-indigo-300">{t('missionBriefing')}</div>
                         <pre className="text-base sm:text-lg md:text-xl font-mono text-cyan-300 whitespace-pre-wrap mt-2">{flightLog}</pre>
                     </>
                 )}
@@ -90,7 +92,7 @@ const GameScreen: React.FC<GameScreenProps> = (props) => {
       case GameState.COUNTDOWN:
         return (
           <div className="text-center">
-            <div className="text-xl text-gray-300">Takeoff in</div>
+            <div className="text-xl text-gray-300">{t('takeoffIn')}</div>
             <div className="text-5xl sm:text-6xl font-bold text-white drop-shadow-lg">{countdown}</div>
             <pre className="text-sm font-mono text-cyan-400 whitespace-pre-wrap mt-2 opacity-70 max-w-xs sm:max-w-sm truncate">{flightLog}</pre>
           </div>
@@ -99,7 +101,7 @@ const GameScreen: React.FC<GameScreenProps> = (props) => {
       case GameState.CRASHED:
         return (
           <div className="text-center relative">
-            {isCrashed && <div className="text-xl sm:text-2xl md:text-3xl font-bold text-red-500 absolute -top-10 left-1/2 -translate-x-1/2 w-full">CRASHED!</div>}
+            {isCrashed && <div className="text-xl sm:text-2xl md:text-3xl font-bold text-red-500 absolute -top-10 left-1/2 -translate-x-1/2 w-full">{t('crashed')}</div>}
             <div className={`text-5xl sm:text-6xl md:text-8xl font-bold transition-colors duration-300 ${multiplierColor} drop-shadow-[0_0_15px_rgba(100,200,255,0.5)]`}>
               {multiplier.toFixed(2)}x
             </div>
@@ -107,7 +109,7 @@ const GameScreen: React.FC<GameScreenProps> = (props) => {
             {isSafeZone && isRunning && (
                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-green-500/80 text-white px-3 py-1 rounded-full text-base sm:text-lg animate-pulse">
                     <ShieldIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                    SAFE ZONE
+                    {t('safeZone')}
                 </div>
             )}
           </div>

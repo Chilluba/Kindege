@@ -1,38 +1,41 @@
 import React from 'react';
 import { THEORETICAL_RTP } from '../constants';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface IntroductionProps {
   onStartGame: () => void;
 }
 
 const Introduction: React.FC<IntroductionProps> = ({ onStartGame }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="w-full max-w-2xl mx-auto bg-black bg-opacity-40 rounded-xl border border-indigo-500/30 p-6 sm:p-8 text-center animate-fade-in">
-      <h1 className="text-3xl sm:text-4xl font-bold text-cyan-300 drop-shadow-[0_0_8px_rgba(100,200,255,0.8)]">Welcome to Shadow Flight</h1>
-      <p className="text-indigo-200 mt-2">Your high-stakes mission briefing.</p>
+      <h1 className="text-3xl sm:text-4xl font-bold text-cyan-300 drop-shadow-[0_0_8px_rgba(100,200,255,0.8)]">{t('welcomeTitle')}</h1>
+      <p className="text-indigo-200 mt-2">{t('welcomeSubtitle')}</p>
       
       <div className="text-left mt-8 space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-white mb-2">OBJECTIVE</h2>
-          <p className="text-gray-300">Your goal is to cash out with the highest multiplier possible before the enemy "shadow" plane crashes your mission. Winning requires skill, nerve, and a bit of luck.</p>
+          <h2 className="text-xl font-bold text-white mb-2">{t('objectiveTitle')}</h2>
+          <p className="text-gray-300">{t('objectiveText')}</p>
         </div>
 
         <div>
-          <h2 className="text-xl font-bold text-white mb-2">HOW TO PLAY</h2>
+          <h2 className="text-xl font-bold text-white mb-2">{t('howToPlayTitle')}</h2>
           <ol className="list-decimal list-inside space-y-2 text-gray-300">
-            <li><span className="font-semibold text-white">Place Your Bet:</span> Set your bet for the upcoming round.</li>
-            <li><span className="font-semibold text-white">Watch the Flight:</span> The plane flies upwards as the multiplier increases.</li>
-            <li><span className="font-semibold text-white">Beware the Shadow:</span> A red shadow plane pursues you. The closer it gets, the more it drains your potential payout!</li>
-            <li><span className="font-semibold text-white">Cash Out to Win:</span> Click "Cash Out" to secure your winnings before the shadow catches you and ends the round.</li>
+            <li><span className="font-semibold text-white">{t('howToPlayStep1')}</span> {t('howToPlayStep1Text')}</li>
+            <li><span className="font-semibold text-white">{t('howToPlayStep2')}</span> {t('howToPlayStep2Text')}</li>
+            <li><span className="font-semibold text-white">{t('howToPlayStep3')}</span> {t('howToPlayStep3Text')}</li>
+            <li><span className="font-semibold text-white">{t('howToPlayStep4')}</span> {t('howToPlayStep4Text')}</li>
           </ol>
         </div>
 
         <div>
-            <h2 className="text-xl font-bold text-white mb-2">NEW MECHANICS</h2>
+            <h2 className="text-xl font-bold text-white mb-2">{t('newMechanicsTitle')}</h2>
             <ul className="list-disc list-inside space-y-2 text-gray-300">
-                <li><span className="font-semibold text-yellow-400">Adaptive Challenge:</span> The game adapts to your performance. The "Challenge Level" indicator shows the current intensity.</li>
-                <li><span className="font-semibold text-green-400">Safe Zones:</span> Occasionally, a "Safe Zone" round will occur, giving you a rare chance for a much higher payout!</li>
-                 <li><span className="font-semibold text-cyan-400">Fair & Volatile:</span> The game targets a theoretical ~{THEORETICAL_RTP}% Return-to-Player (RTP). Most rounds crash early, but rare, massive multipliers are possible.</li>
+                <li><span className="font-semibold text-yellow-400">{t('mechanicAdaptive')}</span> {t('mechanicAdaptiveText')}</li>
+                <li><span className="font-semibold text-green-400">{t('mechanicSafeZones')}</span> {t('mechanicSafeZonesText')}</li>
+                 <li><span className="font-semibold text-cyan-400">{t('mechanicFair')}</span> {t('mechanicFairText', { rtp: THEORETICAL_RTP })}</li>
             </ul>
         </div>
       </div>
@@ -41,10 +44,10 @@ const Introduction: React.FC<IntroductionProps> = ({ onStartGame }) => {
         onClick={onStartGame}
         className="mt-10 w-full md:w-auto px-10 py-4 text-xl font-bold bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 transition-all duration-200 rounded-lg shadow-lg transform active:scale-95"
       >
-        Begin Mission
+        {t('beginMissionButton')}
       </button>
 
-      <p className="text-sm text-gray-400 mt-4">A game by Salmin Habibu</p>
+      <p className="text-sm text-gray-400 mt-4">{t('creatorCredit')}</p>
 
       <style>{`
         @keyframes fade-in {
