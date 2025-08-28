@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState } from './types';
 import type { HistoryItem } from './types';
 import { GoogleGenAI } from "@google/genai";
-import { API_KEY } from './config';
 import {
   INITIAL_BALANCE,
   MIN_BET,
@@ -27,7 +27,7 @@ import Introduction from './components/Introduction';
 import useSound from './hooks/useSound';
 import useVibration from './hooks/useVibration';
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const App: React.FC = () => {
   const [showIntroduction, setShowIntroduction] = useState<boolean>(true);
@@ -117,10 +117,10 @@ const App: React.FC = () => {
   }, []);
   
   useEffect(() => {
-    if (gameState === GameState.BETTING && !isGeneratingLog) {
+    if (gameState === GameState.BETTING) {
         generateFlightLog();
     }
-  }, [gameState, isGeneratingLog, generateFlightLog]);
+  }, [gameState, generateFlightLog]);
 
   // Effect to control continuous plane sounds
   useEffect(() => {

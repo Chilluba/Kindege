@@ -40,10 +40,11 @@ To run this project locally, follow these steps:
 
 -   A modern web browser.
 -   A **Google Gemini API Key**. You can obtain one from [Google AI Studio](https://aistudio.google.com/app/apikey).
+-   Your API key must be available to the application as an environment variable named `API_KEY`.
 
 ### Installation & Running
 
-This project is a client-side application and can be run by serving the files with any simple static server.
+This project is a client-side application. The application expects the `API_KEY` environment variable to be available in its execution context.
 
 1.  **Clone the repository:**
     ```bash
@@ -51,15 +52,7 @@ This project is a client-side application and can be run by serving the files wi
     cd shadow-flight-game
     ```
 
-2.  **Set up your API Key:**
-    Open the `config.ts` file and replace the placeholder with your actual Google Gemini API key.
-    ```typescript
-    // In config.ts
-    export const API_KEY = 'YOUR_GEMINI_API_KEY_HERE';
-    ```
-    **Important**: The `config.ts` file is included in `.gitignore` to prevent you from accidentally committing your secret key to version control.
-
-3.  **Serve the files:**
+2.  **Serve the files:**
     You can use a simple tool like `live-server` or Python's built-in HTTP server.
 
     **Using `live-server` (requires Node.js):**
@@ -80,7 +73,7 @@ This project is a client-side application and can be run by serving the files wi
     python -m SimpleHTTPServer
     ```
 
-4.  Open your browser and navigate to the local address provided by your server (e.g., `http://127.0.0.1:8080`).
+3.  Open your browser and navigate to the local address provided by your server (e.g., `http://127.0.0.1:8080`).
 
 ## Project Structure
 
@@ -95,7 +88,6 @@ This project is a client-side application and can be run by serving the files wi
 ├── hooks/               # Custom React hooks
 │   ├── useSound.ts
 │   └── useVibration.ts
-├── config.ts            # API Key configuration (Git ignored)
 ├── constants.ts         # Game configuration values
 ├── types.ts             # TypeScript type definitions
 ├── App.tsx              # Main application component and game logic
