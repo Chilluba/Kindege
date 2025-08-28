@@ -85,8 +85,8 @@ const App: React.FC = () => {
   
   useEffect(() => {
     if (!process.env.API_KEY) {
-      const error = "Google Gemini API key not found. Please set the API_KEY environment variable in your deployment settings.";
-      console.error(error);
+      const error = "Google Gemini API key not found in environment variables.";
+      console.error(error + " Please see README for setup instructions to enable AI features.");
       setApiKeyError(error);
     }
   }, []);
@@ -166,7 +166,7 @@ const App: React.FC = () => {
     const roll = Math.random();
     // difficultyFactor (0.8 to 1.5) adjusts the probability curve.
     // > 1.0 makes lower rolls more likely (harder)
-    // < 1.0 makes higher rolls more likely (easier)
+    // < 1.0 makes higher rolls more likely (easer)
     const effectiveRoll = Math.pow(roll, difficulty);
 
     // [3% chance] Instant crash
@@ -387,23 +387,6 @@ const App: React.FC = () => {
     setShowIntroduction(false);
   };
 
-  if (apiKeyError) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-indigo-900 to-black text-white font-mono flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-2xl bg-red-900/50 border border-red-500 rounded-lg p-6 text-center">
-          <h1 className="text-2xl font-bold text-red-300">Configuration Error</h1>
-          <p className="mt-4 text-red-200">{apiKeyError}</p>
-          <p className="mt-4 text-gray-300">
-            This application is running in a client-side environment where `process.env.API_KEY` is not available. This is a common issue for static sites deployed without a build step.
-          </p>
-          <p className="mt-4 text-sm text-gray-400">
-            To fix this, you must use a build tool like Vite or Create React App to make environment variables available to your app. Please see the updated README for more details.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={`min-h-screen bg-gradient-to-b from-gray-900 via-indigo-900 to-black text-white font-mono flex flex-col items-center justify-center p-2 sm:p-4 ${isShaking ? 'crash-shake' : ''}`}>
       <style>{`
@@ -435,6 +418,12 @@ const App: React.FC = () => {
       ) : (
         <>
           <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
+             {apiKeyError && (
+              <div className="w-full p-3 bg-red-900/70 border border-red-600 rounded-lg text-red-200 text-center text-sm">
+                <p><span className="font-bold">API Key Error:</span> {apiKeyError}</p>
+                <p>The core game remains playable, but AI mission briefings are disabled.</p>
+              </div>
+            )}
             <HistoryBar history={history} />
             <GameScreen 
               gameState={gameState}

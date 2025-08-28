@@ -37,20 +37,24 @@ The objective is simple but challenging:
 ### Prerequisites
 
 -   A modern web browser.
--   A **Google Gemini API Key**. You can obtain one from [Google AI Studio](https://aistudio.google.com/app/apikey).
--   Your API key must be available to the application as an environment variable named `API_KEY`.
+-   A **Google Gemini API Key** (optional, for AI features). You can obtain one from [Google AI Studio](https://aistudio.google.com/app/apikey).
 
-### Environment Variable Setup (Crucial!)
+### Environment Variable Setup (For AI Features)
 
-This project is a client-side application that needs access to your `API_KEY`. Browser-based JavaScript cannot directly read system environment variables for security reasons. Therefore, a **build step is required** to make the key available.
+This project is a client-side application that needs access to your `API_KEY` to generate mission briefings. Browser-based JavaScript cannot directly read system environment variables for security reasons. Therefore, a **build step is required** to make the key available if you want to enable this feature.
 
-**Deployment (Vercel, Railway, etc.):**
-1.  Set your `API_KEY` in your hosting provider's "Environment Variables" settings.
-2.  **You must configure a build command.** This project is not configured with a build tool out-of-the-box. To make environment variables work, you would need to integrate a tool like [Vite](https://vitejs.dev/) or [Create React App](https://create-react-app.dev/). These tools replace `process.env.API_KEY` in the code with the actual key at build time.
-3.  Deploying these files as a "Static Site" without a build command **will not work** and will result in a configuration error screen.
+**Local Development (with Vite, Next.js, etc.):**
+For local development, you would use a tool like Vite, which reads environment variables from a `.env` file and makes them available under `import.meta.env`.
 
-**Local Development:**
-For local development, you would typically use a tool like Vite, which reads environment variables from a `.env` file.
+**Production Build:**
+Tools like Vite or Create React App replace `process.env.API_KEY` in the code with the actual key at build time. You would set your `API_KEY` in your hosting provider's "Environment Variables" settings, and the build command would embed it.
+
+### Deployment on Static Hosting (Vercel, Railway, etc.)
+
+This application is designed for easy deployment and will work correctly even without a build step.
+
+-   **Without API Key (Default)**: The game is fully playable. If you deploy the project as-is to a static hosting provider, the core crash game will work perfectly. The only feature that will be disabled is the AI-generated mission briefings. You will see a warning message in the game if the API key is not configured.
+-   **With API Key (Enabling AI Features)**: To enable the AI mission briefings, you must provide the `API_KEY` to the application. As explained above, this requires a **build step** using a tool like Vite or Next.js to securely embed the key from your hosting provider's environment variables into the static files. Simply setting the environment variable in your Vercel/Railway project settings is **not enough** for a static site without a build process.
 
 ## Project Structure
 
