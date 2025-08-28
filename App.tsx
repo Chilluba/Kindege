@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState } from './types';
 import type { HistoryItem } from './types';
@@ -437,7 +436,7 @@ const App: React.FC = () => {
             />
           </div>
           <footer className="text-center text-xs text-gray-400 mt-8">
-            <p>Shadow Flight - A Crash Game Experience</p>
+            <p>Shadow Flight - Created by Salmin Habibu</p>
             <p className="font-bold">Theoretical RTP: ~{THEORETICAL_RTP}%</p>
             <p>Disclaimer: This is a simulation game for entertainment purposes only. No real money is involved.</p>
           </footer>

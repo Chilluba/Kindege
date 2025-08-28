@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { THEORETICAL_RTP } from '../constants';
 
@@ -15,7 +14,7 @@ const Introduction: React.FC<IntroductionProps> = ({ onStartGame }) => {
       <div className="text-left mt-8 space-y-6">
         <div>
           <h2 className="text-xl font-bold text-white mb-2">OBJECTIVE</h2>
-          <p className="text-gray-300">Your goal is to cash out with the highest multiplier possible before the enemy "shadow" plane catches you. Winning requires skill, nerve, and a bit of luck.</p>
+          <p className="text-gray-300">Your goal is to cash out with the highest multiplier possible before the enemy "shadow" plane crashes your mission. Winning requires skill, nerve, and a bit of luck.</p>
         </div>
 
         <div>
@@ -23,8 +22,8 @@ const Introduction: React.FC<IntroductionProps> = ({ onStartGame }) => {
           <ol className="list-decimal list-inside space-y-2 text-gray-300">
             <li><span className="font-semibold text-white">Place Your Bet:</span> Set your bet for the upcoming round.</li>
             <li><span className="font-semibold text-white">Watch the Flight:</span> The plane flies upwards as the multiplier increases.</li>
-            <li><span className="font-semibold text-white">Beware the Shadow:</span> A red shadow plane gives chase with unpredictable speed. If it catches you, you lose your bet.</li>
-            <li><span className="font-semibold text-white">Cash Out to Win:</span> Click "Cash Out" to lock in your winnings (Bet x Multiplier).</li>
+            <li><span className="font-semibold text-white">Beware the Shadow:</span> A red shadow plane pursues you. The closer it gets, the more it drains your potential payout!</li>
+            <li><span className="font-semibold text-white">Cash Out to Win:</span> Click "Cash Out" to secure your winnings before the shadow catches you and ends the round.</li>
           </ol>
         </div>
 
@@ -44,6 +43,8 @@ const Introduction: React.FC<IntroductionProps> = ({ onStartGame }) => {
       >
         Begin Mission
       </button>
+
+      <p className="text-sm text-gray-400 mt-4">A game by Salmin Habibu</p>
 
       <style>{`
         @keyframes fade-in {
