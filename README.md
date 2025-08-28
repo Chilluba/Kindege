@@ -34,46 +34,23 @@ The objective is simple but challenging:
 
 ## Getting Started
 
-To run this project locally, follow these steps:
-
 ### Prerequisites
 
 -   A modern web browser.
 -   A **Google Gemini API Key**. You can obtain one from [Google AI Studio](https://aistudio.google.com/app/apikey).
 -   Your API key must be available to the application as an environment variable named `API_KEY`.
 
-### Installation & Running
+### Environment Variable Setup (Crucial!)
 
-This project is a client-side application. The application expects the `API_KEY` environment variable to be available in its execution context.
+This project is a client-side application that needs access to your `API_KEY`. Browser-based JavaScript cannot directly read system environment variables for security reasons. Therefore, a **build step is required** to make the key available.
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/shadow-flight-game.git
-    cd shadow-flight-game
-    ```
+**Deployment (Vercel, Railway, etc.):**
+1.  Set your `API_KEY` in your hosting provider's "Environment Variables" settings.
+2.  **You must configure a build command.** This project is not configured with a build tool out-of-the-box. To make environment variables work, you would need to integrate a tool like [Vite](https://vitejs.dev/) or [Create React App](https://create-react-app.dev/). These tools replace `process.env.API_KEY` in the code with the actual key at build time.
+3.  Deploying these files as a "Static Site" without a build command **will not work** and will result in a configuration error screen.
 
-2.  **Serve the files:**
-    You can use a simple tool like `live-server` or Python's built-in HTTP server.
-
-    **Using `live-server` (requires Node.js):**
-    ```bash
-    # Install live-server globally if you haven't already
-    npm install -g live-server
-
-    # Run from the project directory
-    live-server
-    ```
-
-    **Using Python:**
-    ```bash
-    # For Python 3
-    python3 -m http.server
-
-    # For Python 2
-    python -m SimpleHTTPServer
-    ```
-
-3.  Open your browser and navigate to the local address provided by your server (e.g., `http://127.0.0.1:8080`).
+**Local Development:**
+For local development, you would typically use a tool like Vite, which reads environment variables from a `.env` file.
 
 ## Project Structure
 

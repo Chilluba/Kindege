@@ -30,6 +30,7 @@ import useVibration from './hooks/useVibration';
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const App: React.FC = () => {
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [showIntroduction, setShowIntroduction] = useState<boolean>(true);
   const [gameState, setGameState] = useState<GameState>(GameState.BETTING);
   const [balance, setBalance] = useState<number>(INITIAL_BALANCE);
@@ -83,6 +84,14 @@ const App: React.FC = () => {
   const wasWarningRef = useRef<boolean>(false);
   
   useEffect(() => {
+    if (!process.env.API_KEY) {
+      const error = "Google Gemini API key not found. Please set the API_KEY environment variable in your deployment settings.";
+      console.error(error);
+      setApiKeyError(error);
+    }
+  }, []);
+  
+  useEffect(() => {
     if (animationText) {
         const timer = setTimeout(() => {
             setAnimationText(null);
@@ -92,6 +101,11 @@ const App: React.FC = () => {
   }, [animationText]);
 
   const generateFlightLog = useCallback(async () => {
+    if (apiKeyError) {
+      setFlightLog("Mission details corrupted. API key not configured.");
+      setIsGeneratingLog(false);
+      return;
+    }
     setIsGeneratingLog(true);
     setFlightLog('');
     try {
@@ -114,7 +128,7 @@ const App: React.FC = () => {
     } finally {
         setIsGeneratingLog(false);
     }
-  }, []);
+  }, [apiKeyError]);
   
   useEffect(() => {
     if (gameState === GameState.BETTING) {
@@ -372,6 +386,23 @@ const App: React.FC = () => {
     playMissionStart();
     setShowIntroduction(false);
   };
+
+  if (apiKeyError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-indigo-900 to-black text-white font-mono flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-2xl bg-red-900/50 border border-red-500 rounded-lg p-6 text-center">
+          <h1 className="text-2xl font-bold text-red-300">Configuration Error</h1>
+          <p className="mt-4 text-red-200">{apiKeyError}</p>
+          <p className="mt-4 text-gray-300">
+            This application is running in a client-side environment where `process.env.API_KEY` is not available. This is a common issue for static sites deployed without a build step.
+          </p>
+          <p className="mt-4 text-sm text-gray-400">
+            To fix this, you must use a build tool like Vite or Create React App to make environment variables available to your app. Please see the updated README for more details.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen bg-gradient-to-b from-gray-900 via-indigo-900 to-black text-white font-mono flex flex-col items-center justify-center p-2 sm:p-4 ${isShaking ? 'crash-shake' : ''}`}>
