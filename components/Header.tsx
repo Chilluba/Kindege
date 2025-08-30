@@ -1,14 +1,16 @@
 import React, { useMemo } from 'react';
 import LanguageSwitcher from './LanguageSwitcher';
+import { HistoryIcon } from './icons'; // Import new icon
 import { useTranslation } from '../i18n/useTranslation';
 
 interface HeaderProps {
     balance: number;
     balanceRef: React.RefObject<HTMLDivElement>;
     difficultyFactor: number;
+    onOpenHistory: () => void; // Add prop to open modal
 }
 
-const Header: React.FC<HeaderProps> = ({ balance, balanceRef, difficultyFactor }) => {
+const Header: React.FC<HeaderProps> = ({ balance, balanceRef, difficultyFactor, onOpenHistory }) => {
     const { t } = useTranslation();
 
     const { level: challengeLevel, color: challengeColor } = useMemo(() => {
@@ -28,7 +30,14 @@ const Header: React.FC<HeaderProps> = ({ balance, balanceRef, difficultyFactor }
                     {t('challenge')} <span className={`font-semibold ${challengeColor}`}>{challengeLevel}</span>
                 </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
+                 <button 
+                    onClick={onOpenHistory} 
+                    className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+                    aria-label={t('historyButton')}
+                 >
+                    <HistoryIcon className="w-6 h-6 text-gray-300"/>
+                 </button>
                  <div ref={balanceRef} className="relative text-right">
                     <div className="text-gray-400 text-sm">{t('balance')}</div>
                     <div className="text-white font-semibold text-lg sm:text-xl">{balance.toFixed(2)} <span className="text-gray-500 text-base">TZS</span></div>

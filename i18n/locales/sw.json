@@ -60,5 +60,14 @@
   "numberOfRounds": "Idadi ya Raundi",
   "stopOnProfit": "Simamisha kwa faida >=",
   "stopOnLoss": "Simamisha kwa hasara >=",
-  "optionalPlaceholder": "Hiari"
+  "optionalPlaceholder": "Hiari",
+  "historyButton": "Historia",
+  "historyModalTitle": "Historia ya Dau za Kina",
+  "historyTableBet": "Dau",
+  "historyTableCashedOut": "Ilitolewa Kwa",
+  "historyTableCrash": "Nukta ya Ajali",
+  "historyTableProfit": "Faida/Hasara",
+  "noDetailedHistory": "Bado huna historia ya dau.",
+  "closeButton": "Funga",
+  "clearHistoryButton": "Futa Historia"
 }

@@ -60,5 +60,14 @@
   "numberOfRounds": "Number of Rounds",
   "stopOnProfit": "Stop on Profit >=",
   "stopOnLoss": "Stop on Loss >=",
-  "optionalPlaceholder": "Optional"
+  "optionalPlaceholder": "Optional",
+  "historyButton": "History",
+  "historyModalTitle": "Detailed Bet History",
+  "historyTableBet": "Bet",
+  "historyTableCashedOut": "Cashed Out",
+  "historyTableCrash": "Crash Point",
+  "historyTableProfit": "Profit/Loss",
+  "noDetailedHistory": "You have no bet history yet.",
+  "closeButton": "Close",
+  "clearHistoryButton": "Clear History"
 }

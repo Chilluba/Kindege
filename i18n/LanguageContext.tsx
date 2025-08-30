@@ -66,7 +66,16 @@ const enTranslations = {
   "numberOfRounds": "Number of Rounds",
   "stopOnProfit": "Stop on Profit >=",
   "stopOnLoss": "Stop on Loss >=",
-  "optionalPlaceholder": "Optional"
+  "optionalPlaceholder": "Optional",
+  "historyButton": "History",
+  "historyModalTitle": "Detailed Bet History",
+  "historyTableBet": "Bet",
+  "historyTableCashedOut": "Cashed Out",
+  "historyTableCrash": "Crash Point",
+  "historyTableProfit": "Profit/Loss",
+  "noDetailedHistory": "You have no bet history yet.",
+  "closeButton": "Close",
+  "clearHistoryButton": "Clear History"
 };
 
 const swTranslations = {
@@ -131,7 +140,16 @@ const swTranslations = {
   "numberOfRounds": "Idadi ya Raundi",
   "stopOnProfit": "Simamisha kwa faida >=",
   "stopOnLoss": "Simamisha kwa hasara >=",
-  "optionalPlaceholder": "Hiari"
+  "optionalPlaceholder": "Hiari",
+  "historyButton": "Historia",
+  "historyModalTitle": "Historia ya Dau za Kina",
+  "historyTableBet": "Dau",
+  "historyTableCashedOut": "Ilitolewa Kwa",
+  "historyTableCrash": "Nukta ya Ajali",
+  "historyTableProfit": "Faida/Hasara",
+  "noDetailedHistory": "Bado huna historia ya dau.",
+  "closeButton": "Funga",
+  "clearHistoryButton": "Futa Historia"
 };
 
 // Create a map of language codes to their translation modules. This bundles the translations with the app.

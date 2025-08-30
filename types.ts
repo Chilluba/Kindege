@@ -19,3 +19,11 @@ export interface CoinAnimationData {
   endX?: number;
   endY?: number;
 }
+
+export interface DetailedHistoryItem {
+  id: number;
+  betAmount: number;
+  cashedOutAt: number | null;
+  crashMultiplier: number;
+  profit: number;
+}

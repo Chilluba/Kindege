@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState } from './types';
-import type { HistoryItem, CoinAnimationData } from './types';
+// Import new type
+import type { HistoryItem, CoinAnimationData, DetailedHistoryItem } from './types'; 
 import {
   INITIAL_BALANCE,
   MIN_BET,
@@ -23,9 +24,12 @@ import GameScreen from './components/GameScreen';
 import { Controls } from './components/Controls';
 import Introduction from './components/Introduction';
 import CoinAnimationManager from './components/CoinAnimation';
+import HistoryModal from './components/HistoryModal'; // Import new modal
 import useSound from './hooks/useSound';
 import useVibration from './hooks/useVibration';
 import { useTranslation } from './i18n/useTranslation';
+
+const DETAILED_HISTORY_STORAGE_KEY = 'shadowFlightDetailedHistory';
 
 const App: React.FC = () => {
   const { t, getMissions } = useTranslation();
@@ -39,7 +43,12 @@ const App: React.FC = () => {
   const [effectiveMultiplier, setEffectiveMultiplier] = useState<number>(1.00);
   const [crashMultiplier, setCrashMultiplier] = useState<number>(1.00);
   
+  // Simple history for the bar
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  // Detailed history for the modal
+  const [detailedHistory, setDetailedHistory] = useState<DetailedHistoryItem[]>([]);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false);
+
   const [countdown, setCountdown] = useState<number>(COUNTDOWN_SECONDS);
   
   const [flightLog, setFlightLog] = useState<string>('Prepare for takeoff...');
@@ -92,6 +101,27 @@ const App: React.FC = () => {
   const balanceRef = useRef<HTMLDivElement>(null);
   const actionButtonRef = useRef<HTMLButtonElement>(null);
   
+  // Load detailed history from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedHistory = localStorage.getItem(DETAILED_HISTORY_STORAGE_KEY);
+      if (storedHistory) {
+        setDetailedHistory(JSON.parse(storedHistory));
+      }
+    } catch (error) {
+      console.error("Failed to load detailed history from localStorage", error);
+    }
+  }, []);
+
+  // Save detailed history to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(DETAILED_HISTORY_STORAGE_KEY, JSON.stringify(detailedHistory));
+    } catch (error) {
+      console.error("Failed to save detailed history to localStorage", error);
+    }
+  }, [detailedHistory]);
+
   const triggerCoinAnimation = useCallback((type: 'win' | 'loss' | 'bet') => {
     const startRect = (type === 'win' ? actionButtonRef.current : balanceRef.current)?.getBoundingClientRect();
     const endRect = (type === 'win' ? balanceRef.current : actionButtonRef.current)?.getBoundingClientRect();
@@ -191,6 +221,16 @@ const App: React.FC = () => {
     setTimeout(() => setIsShaking(false), 500);
 
     setGameState(GameState.CRASHED);
+    
+    // Create new detailed history item
+    const newDetailedHistoryItem: DetailedHistoryItem = {
+      id: Date.now(),
+      betAmount: betAmount,
+      cashedOutAt: hasCashedOut ? effectiveMultiplier : null,
+      crashMultiplier: crashMultiplier,
+      profit: hasCashedOut ? (betAmount * effectiveMultiplier) - betAmount : -betAmount,
+    };
+    setDetailedHistory(prev => [newDetailedHistoryItem, ...prev]);
 
     if (hasCashedOut) {
         setDifficultyFactor(prev => Math.min(DIFFICULTY_MAX, prev + DIFFICULTY_WIN_INCREASE));
@@ -208,7 +248,7 @@ const App: React.FC = () => {
         setGameState(GameState.BETTING);
     }, POST_ROUND_DELAY_MS);
 
-  }, [crashMultiplier, playExplosion, hasCashedOut, playCrashVibration, triggerCoinAnimation]);
+  }, [crashMultiplier, playExplosion, hasCashedOut, playCrashVibration, triggerCoinAnimation, betAmount, effectiveMultiplier]);
 
   const startRound = useCallback(() => {
     const safeZone = Math.random() < SAFE_ZONE_CHANCE;
@@ -353,6 +393,10 @@ const App: React.FC = () => {
     }
   };
   
+  const handleClearHistory = () => {
+    setDetailedHistory([]);
+  };
+
   useEffect(() => {
     if (!isAutoBetActive || gameState !== GameState.BETTING) {
       return;
@@ -405,12 +449,23 @@ const App: React.FC = () => {
         }
       `}</style>
       <CoinAnimationManager animations={coinAnimations} />
+      <HistoryModal 
+        isOpen={isHistoryModalOpen} 
+        onClose={() => setIsHistoryModalOpen(false)}
+        history={detailedHistory}
+        onClear={handleClearHistory}
+      />
       {showIntroduction ? (
         <Introduction onStartGame={handleStartGame} />
       ) : (
         <>
           <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
-            <Header balance={balance} balanceRef={balanceRef} difficultyFactor={difficultyFactor} />
+            <Header 
+              balance={balance} 
+              balanceRef={balanceRef} 
+              difficultyFactor={difficultyFactor} 
+              onOpenHistory={() => setIsHistoryModalOpen(true)}
+            />
             <HistoryBar history={history} />
             <GameScreen 
               gameState={gameState}
